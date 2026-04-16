@@ -99,12 +99,31 @@ class BaseRenderer:
         ])
         
         process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1, encoding="utf-8", errors="replace")
+        log_buffer = []
         for line in process.stdout:
-            if "frame=" in line and video_id == 1: 
-                print(f"[V{video_id}] {line.strip()}")
-            elif "Error" in line:
-                print(f"[V{video_id}][FFmpeg ERROR] {line.strip()}")
+            clean_line = line.strip()
+            log_buffer.append(clean_line)
+            if len(log_buffer) > 100:
+                log_buffer.pop(0)
+                
+            if clean_line.startswith("frame=") or clean_line.startswith("size="):
+                pass # Optionally suppress frame spam to make logs readable
+            else:
+                print(f"[V{video_id}][FFmpeg] {clean_line}")
+                
         process.wait()
         if process.returncode != 0:
-            print(f"[V{video_id}] Render FAILED with exit code {process.returncode}")
+            print(f"\n[V{video_id}] Render FAILED with exit code {process.returncode}")
+            print(f"--- EXTENDED FFMPEG CRASH LOG FOR V{video_id} ---")
+            for l in log_buffer[-50:]:
+                print(l)
+            print("---------------------------------------")
+            
+            # Also read the filter generated script to help debugging
+            if os.path.exists(filter_script_path):
+                print("\n[DEBUG] Contents of the generated filter graph:")
+                with open(filter_script_path, "r", encoding="utf-8") as f:
+                    print(f.read())
+                print("[DEBUG] ---------------------------------------\n")
+                
         return process.returncode == 0
