@@ -15,10 +15,13 @@ def sanitize_path(p: str) -> str:
     return os.path.abspath(p).replace('\\', '/').replace(':', '\\:')
 
 def ffmpeg_escape(text: str) -> str:
-    t = text.replace('\\', '\\\\')
-    t = t.replace(',', '\\,').replace(':', '\\:').replace("'", "'\\\\\\''")
-    return t
-
+    return (
+        text.replace('\\', '\\\\')   # escape backslash
+            .replace(':', '\\:')     # REQUIRED
+            .replace(',', '\\,')     # REQUIRED
+            .replace("'", "\\'")     # simple escape only
+            .replace('%', '\\%')     # VERY IMPORTANT for drawtext
+    )
 def get_duration(f_path):
     try:
         if not os.path.exists(f_path) or os.path.getsize(f_path) == 0:
