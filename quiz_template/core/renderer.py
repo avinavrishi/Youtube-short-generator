@@ -54,7 +54,7 @@ class BaseRenderer:
         
         for line in lines:
             escaped_text = ffmpeg_escape(line.strip())
-            en_str = f"enable='{enable}':" if enable else ""
+            en_str = f"enable={enable}:" if enable else ""
             x_str = f"x={x_start}" if align != "center" else "x=(w-text_w)/2"
             
             alpha_str = ""
@@ -71,7 +71,7 @@ class BaseRenderer:
 
             border_str = f":bordercolor={border_color}:borderw={border_w}" if border_w > 0 else ""
             box_str = ":box=1:boxcolor=black@0.4:boxborderw=10" if use_box else ""
-            self.filter_graph.append(f"{current_node}drawtext={en_str}text='{escaped_text}':fontfile='{font}':fontcolor={color}:fontsize={size}:{x_str}:y={y_pos}{alpha_str}{border_str}{box_str}[v{video_id}_{self.v_idx}];")
+            self.filter_graph.append(f"{current_node}drawtext={en_str}text='{escaped_text}':fontfile='{font}':fontcolor={color}:fontsize={size}:{x_str}:y={y_pos}{alpha_str}{border_str}{box_str}[v{video_id}_{self.v_idx}]")
             current_node = f"[v{video_id}_{self.v_idx}]"
             self.v_idx += 1
             y_pos += line_height

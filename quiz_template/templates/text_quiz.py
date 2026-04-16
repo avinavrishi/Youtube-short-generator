@@ -277,7 +277,7 @@ class TextQuizRenderer(BaseRenderer):
             else:
                 final_mixer = f"{anchor_filter} [anchor{video_id}]{amix_tags}amix=inputs={num_audio_inputs}:duration=first:normalize=0[aout{video_id}]"
             
-            full_filter = "".join(self.filter_graph).rstrip(';') + ";" + ";".join(audio_mixes).rstrip(';') + ";" + final_mixer
+            full_filter = ";".join([f.strip().rstrip(';') for f in self.filter_graph]).rstrip(';') + ";" + ";".join(audio_mixes).rstrip(';') + ";" + final_mixer
             filter_script_path = os.path.join(output_dir, f"v{video_id}_filter.txt")
             with open(filter_script_path, "w", encoding="utf-8") as f: f.write(full_filter)
             
