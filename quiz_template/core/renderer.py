@@ -61,12 +61,12 @@ class BaseRenderer:
             if fade and "between" in enable:
                 try:
                     start_t_val = enable.split('(')[1].split(',')[1].strip()
-                    alpha_str = f":alpha='min(1\, max(0\, (t-{start_t_val})/0.5))'"
+                    alpha_str = f":alpha='min(1\\, max(0\\, (t-{start_t_val})/0.5))'"
                 except: pass
             elif fade and "gte" in enable:
                 try:
                     start_t_val = enable.split('(')[1].split(',')[1].split(')')[0].strip()
-                    alpha_str = f":alpha='min(1\, max(0\, (t-{start_t_val})/0.5))'"
+                    alpha_str = f":alpha='min(1\\, max(0\\, (t-{start_t_val})/0.5))'"
                 except: pass
 
             border_str = f":bordercolor={border_color}:borderw={border_w}" if border_w > 0 else ""
