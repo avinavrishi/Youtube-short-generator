@@ -64,7 +64,7 @@ class TextQuizRenderer(BaseRenderer):
 
             audio_mixes = []
             intro_idx = get_input_idx(intro_audio_path)
-            audio_mixes.append(f"[{intro_idx}:a]volume=1.5,adelay=0|0[a_intro]")
+            audio_mixes.append(f"[{intro_idx}:a]volume=1.5\\,adelay=0|0[a_intro]")
             
             q_assets = []
             temp_time = intro_dur
@@ -153,8 +153,8 @@ class TextQuizRenderer(BaseRenderer):
                 
                 # Audio
                 q_at, a_at = int(start_t*1000), int(reveal_t*1000)
-                audio_mixes.append(f"[{get_input_idx(asset['q_path'])}:a]volume=1.5,adelay={q_at}|{q_at}[a_q{idx}]")
-                audio_mixes.append(f"[{get_input_idx(asset['a_path'])}:a]volume=1.5,adelay={a_at}|{a_at}[a_a{idx}]")
+                audio_mixes.append(f"[{get_input_idx(asset['q_path'])}:a]volume=1.5\\,adelay={q_at}|{q_at}[a_q{idx}]")
+                audio_mixes.append(f"[{get_input_idx(asset['a_path'])}:a]volume=1.5\\,adelay={a_at}|{a_at}[a_a{idx}]")
                 if has_ticktock:
                     tt_at = int((start_t+q_dur)*1000)
                     audio_mixes.append(f"[{get_input_idx(ticktock_path)}:a]atrim=0:{timer},adelay={tt_at}|{tt_at}[a_tt{idx}]")
@@ -258,7 +258,7 @@ class TextQuizRenderer(BaseRenderer):
 
             # Final mixing
             outro_at = int(score_start * 1000)
-            audio_mixes.append(f"[{get_input_idx(outro_audio_path)}:a]volume=1.5,adelay={outro_at}|{outro_at}[a_outro]")
+            audio_mixes.append(f"[{get_input_idx(outro_audio_path)}:a]volume=1.5\\,adelay={outro_at}|{outro_at}[a_outro]")
 
             amix_tags = ""
             for m in audio_mixes:

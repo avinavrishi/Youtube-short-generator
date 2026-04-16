@@ -21,6 +21,7 @@ def ffmpeg_escape(text: str) -> str:
             .replace(',', '\\,')     # REQUIRED
             .replace("'", "\\'")     # simple escape only
             .replace('%', '\\%')     # VERY IMPORTANT for drawtext
+            .replace('?', '\\?')
     )
 def get_duration(f_path):
     try:
