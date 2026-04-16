@@ -3,7 +3,7 @@ import random
 import glob
 import subprocess
 import imageio_ffmpeg
-from .utils import sanitize_path, ffmpeg_escape, wrap_text
+from .utils import sanitize_path, safe_text, escape_expr, wrap_text
 
 VIDEO_WIDTH = 1080
 VIDEO_HEIGHT = 1920
@@ -53,25 +53,27 @@ class BaseRenderer:
         line_height = int(size * 1.15) 
         
         for line in lines:
-            escaped_text = ffmpeg_escape(line.strip())
+            escaped_text = safe_text(line.strip())
             en_str = f"enable={enable}:" if enable else ""
             x_str = f"x={x_start}" if align != "center" else "x=(w-text_w)/2"
             
             alpha_str = ""
-            if fade and "between" in enable:
-                try:
-                    start_t_val = enable.split('(')[1].split(',')[1].strip()
-                    alpha_str = f":alpha='min(1\\, max(0\\, (t-{start_t_val})/0.5))'"
-                except: pass
-            elif fade and "gte" in enable:
-                try:
-                    start_t_val = enable.split('(')[1].split(',')[1].split(')')[0].strip()
-                    alpha_str = f":alpha='min(1\\, max(0\\, (t-{start_t_val})/0.5))'"
-                except: pass
+            if fade and enable:
+                clean_en = enable.replace('\\,', ',')
+                if "between" in clean_en:
+                    try:
+                        start_t_val = clean_en.split('(')[1].split(',')[1].strip()
+                        alpha_str = f":alpha=min(1\\,max(0\\,(t-{start_t_val})/0.5))"
+                    except: pass
+                elif "gte" in clean_en:
+                    try:
+                        start_t_val = clean_en.split('(')[1].split(',')[1].split(')')[0].strip()
+                        alpha_str = f":alpha=min(1\\,max(0\\,(t-{start_t_val})/0.5))"
+                    except: pass
 
             border_str = f":bordercolor={border_color}:borderw={border_w}" if border_w > 0 else ""
             box_str = ":box=1:boxcolor=black@0.4:boxborderw=10" if use_box else ""
-            self.filter_graph.append(f"{current_node}drawtext={en_str}text='{escaped_text}':fontfile='{font}':fontcolor={color}:fontsize={size}:{x_str}:y={y_pos}{alpha_str}{border_str}{box_str}[v{video_id}_{self.v_idx}]")
+            self.filter_graph.append(f"{current_node}drawtext={en_str}text='{escaped_text}':expansion=none:fontfile='{font}':fontcolor={color}:fontsize={size}:{x_str}:y={y_pos}{alpha_str}{border_str}{box_str}[v{video_id}_{self.v_idx}];")
             current_node = f"[v{video_id}_{self.v_idx}]"
             self.v_idx += 1
             y_pos += line_height

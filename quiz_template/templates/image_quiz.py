@@ -177,14 +177,14 @@ class ImageQuizRenderer(BaseRenderer):
                     audio_mixes.append(f"[{get_input_idx(ticktock_path)}:a]atrim=0:{timer},adelay={tt_at}|{tt_at}[a_tt{idx}]")
 
                 # Question Text (HIDDEN as per user request - only VO plays)
-                # last_node = self.add_line_to_graph(last_node, f"Q{idx+1}: {asset['q_text']}", question_font, "yellow", 80, 80, q_y, 30, enable=f"between(t,{asset['q_start_t']:.2f},{end_t:.2f})", fade=True, video_id=video_id)
+                # last_node = self.add_line_to_graph(last_node, f"Q{idx+1}: {asset['q_text']}", question_font, "yellow", 80, 80, q_y, 30, enable=f"between(t\\,{asset['q_start_t']:.2f}\\,{end_t:.2f})", fade=True, video_id=video_id)
                 
                 # IMAGE OVERLAY
                 if asset['img_path']:
                     img_idx = get_input_idx(asset['img_path'])
                     # Scale image to fit within img_h and VIDEO_WIDTH/2
                     self.filter_graph.append(f"[{img_idx}:v]scale=-1:{img_h-40},drawbox=w=iw+20:h=ih+20:x=-10:y=-10:color=white:t=10[vimg{idx}];")
-                    self.filter_graph.append(f"{last_node}[vimg{idx}]overlay=enable='between(t,{asset['start_t']:.2f},{asset['end_t']:.2f})':x=(W-w)/2:y={img_y}+20[vifo{idx}];")
+                    self.filter_graph.append(f"{last_node}[vimg{idx}]overlay=enable=between(t\\,{asset['start_t']:.2f}\\,{asset['end_t']:.2f}):x=(W-w)/2:y={img_y}+20[vifo{idx}];")
                     last_node = f"[vifo{idx}]"
                 
                 # Loader Bar
@@ -193,17 +193,17 @@ class ImageQuizRenderer(BaseRenderer):
                 prog_expr = f"(({timer}-(t-{t_start_timer:.2f}))/{timer})"
                 
                 self.filter_graph.append(f"[{indices['loader_frame']}:v]scale={l_w}:{l_h}[vframe{idx}];")
-                self.filter_graph.append(f"{last_node}[vframe{idx}]overlay=enable='between(t,{t_start_timer:.2f},{reveal_t:.2f})':x={self.side_margin}:y={l_y}[vfr{idx}];")
+                self.filter_graph.append(f"{last_node}[vframe{idx}]overlay=enable=between(t\\,{t_start_timer:.2f}\\,{reveal_t:.2f}):x={self.side_margin}:y={l_y}[vfr{idx}];")
                 self.filter_graph.append(f"[{indices['loader_fill']}:v]scale={l_w}:{l_h}[vfill{idx}];")
                 self.filter_graph.append(f"color=c=black:s={l_w}x{l_h}[vmask_b{idx}];")
                 self.filter_graph.append(f"[{indices['loader_fill']}:v]alphaextract,scale={l_w}:{l_h}[vfill_alpha{idx}];")
-                self.filter_graph.append(f"[vfill_alpha{idx}][vmask_b{idx}]overlay=enable='between(t,{t_start_timer:.2f},{reveal_t:.2f})':x='-{l_w}*{prog_expr}':y=0[vmask_an{idx}];")
+                self.filter_graph.append(f"[vfill_alpha{idx}][vmask_b{idx}]overlay=enable=between(t\\,{t_start_timer:.2f}\\,{reveal_t:.2f}):x=-{l_w}*{prog_expr}:y=0[vmask_an{idx}];")
                 self.filter_graph.append(f"[vfill{idx}][vmask_an{idx}]alphamerge[vfill_m{idx}];")
-                self.filter_graph.append(f"[vfr{idx}][vfill_m{idx}]overlay=enable='between(t,{t_start_timer:.2f},{reveal_t:.2f})':x={self.side_margin}:y={l_y}[vfb{idx}];")
+                self.filter_graph.append(f"[vfr{idx}][vfill_m{idx}]overlay=enable=between(t\\,{t_start_timer:.2f}\\,{reveal_t:.2f}):x={self.side_margin}:y={l_y}[vfb{idx}];")
                 
                 star_size = 150
                 self.filter_graph.append(f"[{indices['loader_star']}:v]scale={star_size}:-1[vstar{idx}];")
-                self.filter_graph.append(f"[vfb{idx}][vstar{idx}]overlay=enable='between(t,{t_start_timer:.2f},{reveal_t:.2f})':x='{self.side_margin}+{l_w}*(1-{prog_expr})-{star_size}/2':y={l_y}+{l_h}/2-{star_size}/2[vls{idx}];")
+                self.filter_graph.append(f"[vfb{idx}][vstar{idx}]overlay=enable=between(t\\,{t_start_timer:.2f}\\,{reveal_t:.2f}):x={self.side_margin}+{l_w}*(1-{prog_expr})-{star_size}/2:y={l_y}+{l_h}/2-{star_size}/2[vls{idx}];")
                 last_node = f"[vls{idx}]"
                 
                 # Reveal Answer (Multi-column)
@@ -211,24 +211,24 @@ class ImageQuizRenderer(BaseRenderer):
                 row = idx % rows
                 ans_x_reveal = 160 + col * (VIDEO_WIDTH // 2)
                 ans_y_reveal = a_y_start + (row * 90)
-                last_node = self.add_line_to_graph(last_node, asset['a_text'], answer_font, "white", 65, ans_x_reveal, ans_y_reveal, 26, enable=f"gte(t,{reveal_t:.2f})", align="left", fade=True, video_id=video_id)
+                last_node = self.add_line_to_graph(last_node, asset['a_text'], answer_font, "white", 65, ans_x_reveal, ans_y_reveal, 26, enable=f"gte(t\\,{reveal_t:.2f})", align="left", fade=True, video_id=video_id)
 
             # END SCREEN SETTINGS
             # score_start and score_end handled above for audio sync
             total_duration = score_end
             
             # End Screen Background
-            self.filter_graph.append(f"{last_node}drawbox=enable='between(t,{score_start},{score_end})':x=0:y=0:w={VIDEO_WIDTH}:h={VIDEO_HEIGHT}:color=black:t=fill[v_endbg{video_id}];")
+            self.filter_graph.append(f"{last_node}drawbox=enable=between(t\\,{score_start}\\,{score_end}):x=0:y=0:w={VIDEO_WIDTH}:h={VIDEO_HEIGHT}:color=black:t=fill[v_endbg{video_id}];")
             
             # End Logo & Text
             self.filter_graph.append(f"[{indices['logo']}:v]scale=250:-1,setpts=PTS-STARTPTS[end_logo];")
-            self.filter_graph.append(f"[v_endbg{video_id}][end_logo]overlay=enable='between(t,{score_start},{score_end})':x=(W-250)/2:y=200[v_endl{video_id}];")
+            self.filter_graph.append(f"[v_endbg{video_id}][end_logo]overlay=enable=between(t\\,{score_start}\\,{score_end}):x=(W-250)/2:y=200[v_endl{video_id}];")
             
             tyfw_text = "Thank you for watching!"
-            last_node = self.add_line_to_graph(f"[v_endl{video_id}]", tyfw_text, heading_font, "red", 80, 0, 480, 30, f"between(t,{score_start},{score_end})", fade=True, video_id=video_id)
+            last_node = self.add_line_to_graph(f"[v_endl{video_id}]", tyfw_text, heading_font, "red", 80, 0, 480, 30, f"between(t\\,{score_start}\\,{score_end})", fade=True, video_id=video_id)
             
             score_text = f"How many did you get right?\n{qty}/{qty} = Genius!"
-            last_node = self.add_line_to_graph(last_node, score_text, question_font, "yellow", 65, 0, 600, 30, f"between(t,{score_start},{score_end})", fade=True, video_id=video_id)
+            last_node = self.add_line_to_graph(last_node, score_text, question_font, "yellow", 65, 0, 600, 30, f"between(t\\,{score_start}\\,{score_end})", fade=True, video_id=video_id)
 
             # Subscribe Button Animation
             sub_y = VIDEO_HEIGHT - 550
@@ -236,13 +236,13 @@ class ImageQuizRenderer(BaseRenderer):
             btn_x = (VIDEO_WIDTH - btn_w) / 2
             
             like_text = "👍 LIKE THIS VIDEO!"
-            last_node = self.add_line_to_graph(last_node, like_text, question_font, "white", 60, 0, sub_y - 120, 30, f"between(t,{score_start},{score_end})", fade=True, video_id=video_id)
+            last_node = self.add_line_to_graph(last_node, like_text, question_font, "white", 60, 0, sub_y - 120, 30, f"between(t\\,{score_start}\\,{score_end})", fade=True, video_id=video_id)
 
             self.filter_graph.append(f"[{indices['btn_sub']}:v]scale={btn_w}:-1,setpts=PTS-STARTPTS[btn_sub_s];")
-            self.filter_graph.append(f"{last_node}[btn_sub_s]overlay=enable='between(t,{score_start},{score_start+2.5})':x={btn_x}:y={sub_y}[v_btn1];")
+            self.filter_graph.append(f"{last_node}[btn_sub_s]overlay=enable=between(t\\,{score_start}\\,{score_start+2.5}):x={btn_x}:y={sub_y}[v_btn1];")
             
             self.filter_graph.append(f"[{indices['btn_subbed']}:v]scale={btn_w}:-1,setpts=PTS-STARTPTS[btn_subbed_s];")
-            self.filter_graph.append(f"[v_btn1][btn_subbed_s]overlay=enable='between(t,{score_start+2.5},{score_end})':x={btn_x}:y={sub_y}[v_btn2];")
+            self.filter_graph.append(f"[v_btn1][btn_subbed_s]overlay=enable=between(t\\,{score_start+2.5}\\,{score_end}):x={btn_x}:y={sub_y}[v_btn2];")
 
             # Cursor Logic
             c_start_x, c_start_y = 1000, 1800
@@ -256,14 +256,14 @@ class ImageQuizRenderer(BaseRenderer):
             self.filter_graph.append(f"[cur_in1]scale=120:-1,setpts=PTS-STARTPTS,split=2[cur1a][cur1b];")
             self.filter_graph.append(f"[cur_in2]scale=90:-1,setpts=PTS-STARTPTS[cur2];")
             
-            self.filter_graph.append(f"[v_btn2][cur1a]overlay=enable='between(t,{score_start},{score_start+2.4})':x='{move_x}':y='{move_y}'[vc1];")
-            self.filter_graph.append(f"[vc1][cur2]overlay=enable='between(t,{score_start+2.4},{score_start+2.6})':x='{c_end_x+10}':y='{c_end_y+10}'[vc2];")
+            self.filter_graph.append(f"[v_btn2][cur1a]overlay=enable=between(t\\,{score_start}\\,{score_start+2.4}):x={move_x}:y={move_y}[vc1];")
+            self.filter_graph.append(f"[vc1][cur2]overlay=enable=between(t\\,{score_start+2.4}\\,{score_start+2.6}):x={c_end_x+10}:y={c_end_y+10}[vc2];")
             
             out_anim_time = f"(t-{score_start}-2.6)"
             clamp_out = f"min(max(0, {out_anim_time}), 2.4)"
             move_curr_x = f"{c_end_x} + (1200 - {c_end_x})/2.4 * {clamp_out}"
             move_curr_y = f"{c_end_y} + (1800 - {c_end_y})/2.4 * {clamp_out}"
-            self.filter_graph.append(f"[vc2][cur1b]overlay=enable='between(t,{score_start+2.6},{score_end})':x='{move_curr_x}':y='{move_curr_y}'[vc3];")
+            self.filter_graph.append(f"[vc2][cur1b]overlay=enable=between(t\\,{score_start+2.6}\\,{score_end}):x={move_curr_x}:y={move_curr_y}[vc3];")
             
             # Progress Bar (Bottom)
             self.filter_graph.append(f"[vc3]drawbox=x=0:y={VIDEO_HEIGHT-15}:w={VIDEO_WIDTH}:h=15:color=black@0.4:t=fill[v_hbg2_{video_id}];")
@@ -285,14 +285,14 @@ class ImageQuizRenderer(BaseRenderer):
             
             if has_bgm:
                 # Dynamic volume: 0.05 during quiz, 0.25 during end screen
-                bgm_vol = f"if(between(t,{score_start},{score_end}),0.25,0.05)"
-                self.filter_graph.append(f"[0:a]volume='{bgm_vol}':eval=frame[bgm_v{video_id}];")
+                bgm_vol = f"if(between(t\\,{score_start}\\,{score_end})\\,0.25\\,0.05)"
+                self.filter_graph.append(f"[0:a]volume={bgm_vol}:eval=frame[bgm_v{video_id}];")
                 num_audio_inputs += 1
                 final_mixer = f"{anchor_filter} [anchor{video_id}][bgm_v{video_id}]{amix_tags}amix=inputs={num_audio_inputs}:duration=first:normalize=0[aout{video_id}]"
             else:
                 final_mixer = f"{anchor_filter} [anchor{video_id}]{amix_tags}amix=inputs={num_audio_inputs}:duration=first:normalize=0[aout{video_id}]"
             
-            full_filter = "".join(self.filter_graph).rstrip(';') + ";" + ";".join(audio_mixes).rstrip(';') + ";" + final_mixer
+            full_filter = ";".join([f.strip().rstrip(';') for f in self.filter_graph]).rstrip(';') + ";" + ";".join(audio_mixes).rstrip(';') + ";" + final_mixer
             filter_script_path = os.path.join(output_dir, f"v{video_id}_filter.txt")
             with open(filter_script_path, "w", encoding="utf-8") as f: f.write(full_filter)
             

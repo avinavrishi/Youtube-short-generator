@@ -14,7 +14,7 @@ def wrap_text(text: str, width: int = 28) -> str:
 def sanitize_path(p: str) -> str:
     return os.path.abspath(p).replace('\\', '/').replace(':', '\\:')
 
-def ffmpeg_escape(text: str) -> str:
+def safe_text(text: str) -> str:
     return (
         text.replace('\\', '\\\\')   # escape backslash
             .replace(':', '\\:')     # REQUIRED
@@ -23,6 +23,10 @@ def ffmpeg_escape(text: str) -> str:
             .replace('%', '\\%')     # VERY IMPORTANT for drawtext
             .replace('?', '\\?')
     )
+
+def escape_expr(expr: str) -> str:
+    """Escapes commas inside expressions used in filter graphs (e.g., enable, alpha)."""
+    return expr.replace(',', '\\,')
 def get_duration(f_path):
     try:
         if not os.path.exists(f_path) or os.path.getsize(f_path) == 0:
