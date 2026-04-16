@@ -3,6 +3,7 @@ import random
 import glob
 import subprocess
 import imageio_ffmpeg
+import shutil
 from .utils import sanitize_path, safe_text, escape_expr, wrap_text
 
 VIDEO_WIDTH = 1080
@@ -93,6 +94,8 @@ class BaseRenderer:
         return indices
 
     def render_final(self, cmd, filter_script_path, out_path, total_duration, last_video_node, video_id):
+        ffmpeg_path = shutil.which("ffmpeg") or imageio_ffmpeg.get_ffmpeg_exe()
+        cmd[0] = ffmpeg_path
         cmd.extend([
             "-filter_complex_script", filter_script_path, "-map", last_video_node, "-map", f"[aout{video_id}]",
             "-t", str(total_duration), "-c:v", "libx264", "-preset", "ultrafast", "-crf", "28", "-c:a", "aac", out_path
