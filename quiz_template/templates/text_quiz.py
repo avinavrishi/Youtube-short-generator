@@ -233,7 +233,7 @@ class TextQuizRenderer(BaseRenderer):
             c_start_x, c_start_y = 1000, 1800
             c_end_x, c_end_y = btn_x + 280, sub_y + 40
             anim_time = f"(t-{score_start}-1.0)"
-            clamp_time = f"min(max(0, {anim_time}), 1.5)"
+            clamp_time = f"min(max(0\\, {anim_time})\\, 1.5)"
             move_x = f"{c_start_x} + ({c_end_x} - {c_start_x})/1.5 * {clamp_time}"
             move_y = f"{c_start_y} + ({c_end_y} - {c_start_y})/1.5 * {clamp_time}"
             
@@ -245,7 +245,7 @@ class TextQuizRenderer(BaseRenderer):
             self.filter_graph.append(f"[vc1][cur2]overlay=enable=between(t\\,{score_start+2.4}\\,{score_start+2.6}):x={c_end_x+10}:y={c_end_y+10}[vc2];")
             
             out_anim_time = f"(t-{score_start}-2.6)"
-            clamp_out = f"min(max(0, {out_anim_time}), 2.4)"
+            clamp_out = f"min(max(0\\, {out_anim_time})\\, 2.4)"
             move_curr_x = f"{c_end_x} + (1200 - {c_end_x})/2.4 * {clamp_out}"
             move_curr_y = f"{c_end_y} + (1800 - {c_end_y})/2.4 * {clamp_out}"
             self.filter_graph.append(f"[vc2][cur1b]overlay=enable=between(t\\,{score_start+2.6}\\,{score_end}):x={move_curr_x}:y={move_curr_y}[vc3];")
