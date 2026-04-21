@@ -9,7 +9,7 @@ from core.renderer import BaseRenderer, VIDEO_WIDTH, VIDEO_HEIGHT
 import imageio_ffmpeg
 
 class ImageQuizRenderer(BaseRenderer):
-    def build_video(self, video_id, topic, questions, bg_type, music_dir, images_dir, videos_dir, fonts_dir, voiceovers_dir, output_dir, tts_voice):
+    def build_video(self, video_id, topic, questions, bg_type, music_dir, images_dir, videos_dir, fonts_dir, voiceovers_dir, output_dir, tts_voice, is_preview=False):
         try:
             print(f"\n[Engine][V{video_id}] Building Image Quiz: {topic}")
             qty = len(questions)
@@ -133,7 +133,7 @@ class ImageQuizRenderer(BaseRenderer):
             
             # Start Graph
             if bg_input_idx != -1:
-                self.filter_graph.append(f"[{bg_input_idx}:v]scale={VIDEO_WIDTH}:{VIDEO_HEIGHT}:force_original_aspect_ratio=increase,crop={VIDEO_WIDTH}:{VIDEO_HEIGHT},drawbox=w=iw:h=ih:color=black@0.4:t=fill[bg{video_id}];")
+                self.filter_graph.append(f"[{bg_input_idx}:v]scale={VIDEO_WIDTH}:{VIDEO_HEIGHT}:force_original_aspect_ratio=increase,crop={VIDEO_WIDTH}:{VIDEO_HEIGHT}[bg{video_id}];")
             else:
                 self.filter_graph.append(f"color=c=black:s={VIDEO_WIDTH}x{VIDEO_HEIGHT}:r=24[bg{video_id}];")
             last_node = f"[bg{video_id}]"
@@ -153,6 +153,25 @@ class ImageQuizRenderer(BaseRenderer):
             start_y = (header_h - total_text_h) // 2
             last_node = self.add_line_to_graph(last_node, topic_display, heading_font, "red", h_size, 0, start_y, wrap_w=28, align="center", video_id=video_id)
             
+            # Answer Box Gen
+            box_w = 1000
+            box_h = (rows * 90) + 40
+            box_path = os.path.join(self.assets_dir, f"ans_box_{box_w}_{box_h}.png")
+            if not os.path.exists(box_path):
+                from PIL import Image, ImageDraw, ImageFilter
+                b_img = Image.new('RGBA', (box_w + 60, box_h + 60), (0,0,0,0))
+                s_draw = ImageDraw.Draw(b_img)
+                s_draw.rounded_rectangle((30, 30, box_w + 30, box_h + 30), radius=40, fill=(0,0,0,200))
+                b_img = b_img.filter(ImageFilter.GaussianBlur(15))
+                b_draw = ImageDraw.Draw(b_img)
+                b_draw.rounded_rectangle((30, 30, box_w + 30, box_h + 30), radius=40, fill=(0,0,0, 150))
+                b_img.save(box_path)
+
+            box_idx = get_input_idx(box_path)
+            self.filter_graph.append(f"[{box_idx}:v]setpts=PTS-STARTPTS[abox{video_id}];")
+            self.filter_graph.append(f"{last_node}[abox{video_id}]overlay=x=10:y={a_y_start-60}[v_abg{video_id}];")
+            last_node = f"[v_abg{video_id}]"
+
             # Answer Markers (Multi-column)
             for idx in range(qty):
                 col = idx // rows
@@ -293,8 +312,18 @@ class ImageQuizRenderer(BaseRenderer):
                 final_mixer = f"{anchor_filter} [anchor{video_id}]{amix_tags}amix=inputs={num_audio_inputs}:duration=first:normalize=0[aout{video_id}]"
             
             full_filter = ";".join([f.strip().rstrip(';') for f in self.filter_graph]).rstrip(';') + ";" + ";".join(audio_mixes).rstrip(';') + ";" + final_mixer
+            if is_preview:
+                full_filter += f";[aout{video_id}]anullsink"
+                
             filter_script_path = os.path.join(output_dir, f"v{video_id}_filter.txt")
             with open(filter_script_path, "w", encoding="utf-8") as f: f.write(full_filter)
+            
+            if is_preview:
+                preview_target_time = q_assets[0]['reveal_t'] + 0.5 if q_assets else 2.0
+                out_path = os.path.join(output_dir, f"Preview_{topic}_{video_id}_{datetime.datetime.now().strftime('%M%S')}.png")
+                cmd = [imageio_ffmpeg.get_ffmpeg_exe(), "-y"] + self.input_cmds
+                for p in input_paths: cmd.extend(["-i", p.replace('\\', '/')])
+                return self.render_preview(cmd, filter_script_path, out_path, preview_target_time, last_node, video_id)
             
             out_path = os.path.join(output_dir, f"ImageQuiz_{topic}_{video_id}_{datetime.datetime.now().strftime('%M%S')}.mp4")
             cmd = [imageio_ffmpeg.get_ffmpeg_exe(), "-y"] + self.input_cmds

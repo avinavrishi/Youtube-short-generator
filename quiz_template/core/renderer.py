@@ -130,3 +130,30 @@ class BaseRenderer:
                 print("[DEBUG] ---------------------------------------\n")
                 
         return process.returncode == 0
+
+    def render_preview(self, cmd, filter_script_path, out_path, target_time, last_video_node, video_id):
+        ffmpeg_path = shutil.which("ffmpeg") or imageio_ffmpeg.get_ffmpeg_exe()
+        cmd[0] = ffmpeg_path
+        cmd.extend([
+            "-filter_complex_script", filter_script_path, "-map", last_video_node,
+            "-ss", f"{target_time:.2f}", "-frames:v", "1", "-update", "1", out_path
+        ])
+        
+        print(f"[V{video_id}] Generating preview frame at t={target_time:.2f}s...")
+        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1, encoding="utf-8", errors="replace")
+        log_buffer = []
+        for line in process.stdout:
+            clean_line = line.strip()
+            log_buffer.append(clean_line)
+            if len(log_buffer) > 100: log_buffer.pop(0)
+
+        process.wait()
+        if process.returncode != 0:
+            print(f"\n[V{video_id}] Preview Render FAILED with exit code {process.returncode}")
+            print(f"--- FFMPEG CRASH LOG FOR V{video_id} ---")
+            for l in log_buffer[-30:]: print(l)
+            print("---------------------------------------")
+        else:
+            print(f"[V{video_id}] Preview frame successfully saved to {out_path}")
+            
+        return process.returncode == 0

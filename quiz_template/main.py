@@ -70,9 +70,15 @@ def main():
     bg_type_choice = input("\nBG Type (1:Img, 2:Vid, 3:None): ")
     bg_type = {"1": "image", "2": "video", "3": "blue"}.get(bg_type_choice, "blue")
 
+    render_mode = input("Render Mode (1: Full Video, 2: Preview Frame): ").strip()
+    is_preview = (render_mode == "2")
+    if is_preview:
+        num_vids = 1
+
     topic_df = df[(df['Topic'] == topic_choice) & (df['Used'] != True)]
     
-    print(f"\n[Batch] Starting parallel rendering of {num_vids} videos...\n")
+    msg = "videos" if not is_preview else "preview frame"
+    print(f"\n[Batch] Starting parallel rendering of {num_vids} {msg}...\n")
     
     with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_PARALLEL_RENDERS) as executor:
         futures = []
@@ -85,7 +91,7 @@ def main():
             futures.append(executor.submit(
                 renderer.build_video, 
                 v_i+1, topic_choice, sampled_df, bg_type, 
-                MUSIC_DIR, IMAGES_DIR, VIDEOS_DIR, FONTS_DIR, VOICEOVERS_DIR, OUTPUT_DIR, TTS_VOICE
+                MUSIC_DIR, IMAGES_DIR, VIDEOS_DIR, FONTS_DIR, VOICEOVERS_DIR, OUTPUT_DIR, TTS_VOICE, is_preview
             ))
             
             df.loc[sampled_indices, 'Used'] = True
