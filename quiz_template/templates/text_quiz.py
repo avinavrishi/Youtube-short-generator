@@ -70,6 +70,23 @@ class TextQuizRenderer(BaseRenderer):
             temp_time = intro_dur
             for idx, q_data in enumerate(questions):
                 q_text, a_text, timer = q_data['Question'], str(q_data['Answer']), float(q_data['Time_to_Guess'])
+                opt_a, opt_b = str(q_data.get('Option_A', '')), str(q_data.get('Option_B', ''))
+                opt_c, opt_d = str(q_data.get('Option_C', '')), str(q_data.get('Option_D', ''))
+                options = [opt_a, opt_b, opt_c, opt_d]
+
+                # Determine correct index
+                ans_lower = a_text.strip().lower()
+                correct_idx = 0
+                for i, opt in enumerate(options):
+                    if ans_lower == opt.strip().lower():
+                        correct_idx = i
+                        break
+                else:
+                    if ans_lower in ['a', 'option_a']: correct_idx = 0
+                    elif ans_lower in ['b', 'option_b']: correct_idx = 1
+                    elif ans_lower in ['c', 'option_c']: correct_idx = 2
+                    elif ans_lower in ['d', 'option_d']: correct_idx = 3
+
                 q_audio_path = os.path.join(voiceovers_dir, f"q_{get_hash(q_text)}.mp3")
                 a_audio_path = os.path.join(voiceovers_dir, f"a_{get_hash(a_text)}.mp3")
                 asyncio.run(generate_voiceover(q_text, q_audio_path, tts_voice))
@@ -83,7 +100,8 @@ class TextQuizRenderer(BaseRenderer):
                     'q_path': q_audio_path, 'a_path': a_audio_path,
                     'q_dur': q_dur, 'a_dur': a_dur,
                     'start_t': start_t, 'reveal_t': reveal_t, 'end_t': end_t,
-                    'q_text': q_text, 'a_text': a_text, 'timer': timer
+                    'q_text': q_text, 'a_text': a_text, 'timer': timer,
+                    'options': options, 'correct_idx': correct_idx
                 })
                 temp_time = end_t
             
@@ -102,20 +120,14 @@ class TextQuizRenderer(BaseRenderer):
             # DRAWING LOGIC WITH EQUAL SPACING
             # Layout
             header_h = 320
-            footer_h = 100
-            content_h = VIDEO_HEIGHT - header_h - footer_h
-            
-            # Approx component heights (increased for larger text)
-            q_h = 220
+            q_h = 240
+            opt_h = 130
+            opt_gap = 30
             l_h = 160
-            a_h = qty * 100 
             
-            total_elements_h = q_h + l_h + a_h
-            gap = (content_h - total_elements_h) // 4
-            
-            q_y = header_h + gap + 60 # Question position
-            l_y = q_y + q_h + gap - 80 # Loader position (Decrease the 60 to move LOWER)
-            a_y_start = l_y + l_h + gap - 50 # Answers top position (Decrease the 40 to move LOWER)
+            q_y = header_h + 60
+            opt_start_y = q_y + q_h + 40
+            l_y = opt_start_y + 4 * opt_h + 3 * opt_gap + 60
             
             # Start Graph
             if bg_input_idx != -1:
@@ -141,29 +153,36 @@ class TextQuizRenderer(BaseRenderer):
             start_y = (header_h - total_text_h) // 2
             last_node = self.add_line_to_graph(last_node, topic_display, heading_font, "red", h_size, 0, start_y, wrap_w=24, align="center", video_id=video_id)
             
-            # Answer Box Gen
-            box_w = 1000
-            box_h = (qty * 100) + 40
-            box_path = os.path.join(self.assets_dir, f"ans_box_{box_w}_{box_h}.png")
-            if not os.path.exists(box_path):
+            # Option Box Gen
+            opt_box_w = 900
+            opt_box_h = 130
+            opt_box_path = os.path.join(self.assets_dir, f"opt_box_{opt_box_w}_{opt_box_h}.png")
+            hl_box_path = os.path.join(self.assets_dir, f"hl_box_{opt_box_w}_{opt_box_h}.png")
+            
+            if not os.path.exists(opt_box_path) or not os.path.exists(hl_box_path):
                 from PIL import Image, ImageDraw, ImageFilter
-                b_img = Image.new('RGBA', (box_w + 60, box_h + 60), (0,0,0,0))
+                # Normal box
+                b_img = Image.new('RGBA', (opt_box_w + 60, opt_box_h + 60), (0,0,0,0))
                 s_draw = ImageDraw.Draw(b_img)
-                s_draw.rounded_rectangle((30, 30, box_w + 30, box_h + 30), radius=40, fill=(0,0,0,200))
+                s_draw.rounded_rectangle((30, 30, opt_box_w + 30, opt_box_h + 30), radius=40, fill=(0,0,0,200))
                 b_img = b_img.filter(ImageFilter.GaussianBlur(15))
                 b_draw = ImageDraw.Draw(b_img)
-                b_draw.rounded_rectangle((30, 30, box_w + 30, box_h + 30), radius=40, fill=(0,0,0, 150))
-                b_img.save(box_path)
+                b_draw.rounded_rectangle((30, 30, opt_box_w + 30, opt_box_h + 30), radius=40, fill=(0,0,0, 150))
+                b_draw.rounded_rectangle((30, 30, opt_box_w + 30, opt_box_h + 30), radius=40, outline=(255,255,255,100), width=3)
+                b_img.save(opt_box_path)
+                
+                # Highlight box
+                h_img = Image.new('RGBA', (opt_box_w + 60, opt_box_h + 60), (0,0,0,0))
+                hs_draw = ImageDraw.Draw(h_img)
+                hs_draw.rounded_rectangle((30, 30, opt_box_w + 30, opt_box_h + 30), radius=40, fill=(0,200,0,200))
+                h_img = h_img.filter(ImageFilter.GaussianBlur(15))
+                hb_draw = ImageDraw.Draw(h_img)
+                hb_draw.rounded_rectangle((30, 30, opt_box_w + 30, opt_box_h + 30), radius=40, fill=(0,180,0, 220))
+                hb_draw.rounded_rectangle((30, 30, opt_box_w + 30, opt_box_h + 30), radius=40, outline=(0,255,0,255), width=5)
+                h_img.save(hl_box_path)
 
-            box_idx = get_input_idx(box_path)
-            self.filter_graph.append(f"[{box_idx}:v]setpts=PTS-STARTPTS[abox{video_id}];")
-            self.filter_graph.append(f"{last_node}[abox{video_id}]overlay=x=10:y={a_y_start-60}[v_abg{video_id}];")
-            last_node = f"[v_abg{video_id}]"
-
-            # Answers Background list (Static markers)
-            for idx in range(qty):
-                ans_y = a_y_start + (idx * 100) # Fixed to 100 to match reveal logic
-                last_node = self.add_line_to_graph(last_node, f"{idx+1}.", answer_font, "white", 60, 80, ans_y, align="left", video_id=video_id)
+            opt_box_idx = get_input_idx(opt_box_path)
+            hl_box_idx = get_input_idx(hl_box_path)
 
             # Animated Questions & Loader
             for idx, asset in enumerate(q_assets):
@@ -179,16 +198,31 @@ class TextQuizRenderer(BaseRenderer):
                     audio_mixes.append(f"[{get_input_idx(ticktock_path)}:a]atrim=0:{timer},adelay={tt_at}|{tt_at}[a_tt{idx}]")
 
                 # Question Text
-                last_node = self.add_line_to_graph(last_node, f"Q{idx+1}: {asset['q_text']}", question_font, "yellow", 66, 80, q_y, 30, enable=f"between(t\\,{start_t:.2f}\\,{end_t:.2f})", fade=True, video_id=video_id)
+                last_node = self.add_line_to_graph(last_node, f"Q{idx+1}: {asset['q_text']}", question_font, "yellow", 70, 80, q_y, 28, enable=f"between(t\\,{start_t:.2f}\\,{end_t:.2f})", fade=True, video_id=video_id)
                 
-                # (Commented out Timer Number)
-                # t_start_timer = start_t + q_dur
-                # self.filter_graph.append(
-                #     f"{last_node}drawtext=enable='between(t,{t_start_timer:.2f},{reveal_t:.2f})':"
-                #     f"text='%{{eif\\:{int(timer)}-(t-{t_start_timer:.2f})\\:d}}':"
-                #     f"fontfile='{question_font}':fontcolor=black:fontsize=90:x=w-200:y=120:bordercolor=white:borderw=4:box=1:boxcolor=white@0.2[v1_t{idx}];"
-                # )
-                # last_node = f"[v1_t{idx}]"
+                # Draw Options
+                for i, opt_text in enumerate(asset['options']):
+                    oy = opt_start_y + i * (opt_h + opt_gap)
+                    
+                    # Normal Box
+                    self.filter_graph.append(f"[{opt_box_idx}:v]setpts=PTS-STARTPTS[obox_{idx}_{i}];")
+                    self.filter_graph.append(f"{last_node}[obox_{idx}_{i}]overlay=enable=between(t\\,{start_t:.2f}\\,{end_t:.2f}):x={(VIDEO_WIDTH - 900) // 2 - 30}:y={oy - 30}[v_o_{idx}_{i}];")
+                    last_node = f"[v_o_{idx}_{i}]"
+                    
+                    # Normal Text
+                    prefix = ["A.", "B.", "C.", "D."][i]
+                    opt_display = f"{prefix} {opt_text}"
+                    last_node = self.add_line_to_graph(last_node, opt_display, answer_font, "white", 60, (VIDEO_WIDTH - 840) // 2, oy + 25, 30, enable=f"between(t\\,{start_t:.2f}\\,{end_t:.2f})", align="left", video_id=video_id)
+                    
+                    # Highlight Box (if correct)
+                    if i == asset['correct_idx']:
+                        self.filter_graph.append(f"[{hl_box_idx}:v]setpts=PTS-STARTPTS[hlbox_{idx}];")
+                        self.filter_graph.append(f"{last_node}[hlbox_{idx}]overlay=enable=between(t\\,{reveal_t:.2f}\\,{end_t:.2f}):x={(VIDEO_WIDTH - 900) // 2 - 30}:y={oy - 30}[v_h_{idx}];")
+                        last_node = f"[v_h_{idx}]"
+                        
+                        # Highlight Text
+                        last_node = self.add_line_to_graph(last_node, opt_display, question_font, "white", 65, (VIDEO_WIDTH - 840) // 2, oy + 25, 30, enable=f"between(t\\,{reveal_t:.2f}\\,{end_t:.2f})", align="left", video_id=video_id)
+                
                 t_start_timer = start_t + q_dur
                 
                 # Loader Bar
@@ -212,10 +246,6 @@ class TextQuizRenderer(BaseRenderer):
                 self.filter_graph.append(f"[{indices['loader_star']}:v]scale={star_size}:-1[vstar{idx}];")
                 self.filter_graph.append(f"[vfb{idx}][vstar{idx}]overlay=enable=between(t\\,{t_start_timer:.2f}\\,{reveal_t:.2f}):x={self.side_margin}+{l_w}*(1-{prog_expr})-{star_size}/2:y={l_y}+{l_h}/2-{star_size}/2[vls{idx}];")
                 last_node = f"[vls{idx}]"
-                
-                # Reveal Answer
-                ans_y_reveal = a_y_start + (idx * 100)
-                last_node = self.add_line_to_graph(last_node, asset['a_text'], answer_font, "white", 60, 160, ans_y_reveal, 26, enable=f"gte(t\\,{reveal_t:.2f})", align="left", fade=True, video_id=video_id)
 
             # END SCREEN SETTINGS
             # score_start and score_end handled above for audio sync
