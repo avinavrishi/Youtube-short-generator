@@ -264,6 +264,11 @@ class TextQuizRenderer(BaseRenderer):
                 if os.path.exists(hand_path):
                     indices['hand'] = sum(1 for cmd in self.input_cmds if cmd == "-i")
                     self.input_cmds.extend(["-i", hand_path])
+                
+                tick_path = os.path.join(self.assets_dir, "tick.png")
+                if os.path.exists(tick_path):
+                    indices['tick'] = sum(1 for cmd in self.input_cmds if cmd == "-i")
+                    self.input_cmds.extend(["-i", tick_path])
             base_input_count = sum(1 for cmd in self.input_cmds if cmd == "-i")
             
             # DRAWING LOGIC WITH EQUAL SPACING
@@ -1079,12 +1084,14 @@ class TextQuizRenderer(BaseRenderer):
                     c_ox = (VIDEO_WIDTH - opt_w) // 2
                     c_oy = opt_start_y + asset['correct_idx'] * (opt_h + opt_gap_y)
                     c_width_est = len(correct_opt) * 45
-                    tick_target_x = c_ox + c_width_est + 50
+                    tick_target_x = c_ox + c_width_est + 100 # More space to the right
                     tick_target_y = c_oy + 50
                     
                     # Slide from wait position to tick target
                     t_px = f"if(between(t\\,{reveal_t:.2f}\\,{reveal_t+1.0:.2f})\\,if(lte(t\\,{reveal_t+0.4:.2f})\\,{wait_x}+({tick_target_x}+{tip_off_x}-{wait_x})*(t-{reveal_t:.2f})/0.4\\,{tick_target_x}+{tip_off_x})\\,0)"
-                    t_py = f"if(between(t\\,{reveal_t:.2f}\\,{reveal_t+1.0:.2f})\\,if(lte(t\\,{reveal_t+0.4:.2f})\\,{wait_y}+({tick_target_y}+{tip_off_y}-{wait_y})*(t-{reveal_t:.2f})/0.4\\,{tick_target_y}+{tip_off_y})\\,0)"
+                    # Add a 'Poke' (small dip) at the moment of ticking
+                    poke_expr = f"if(between(t\\,{reveal_t+0.35:.2f}\\,{reveal_t+0.55:.2f})\\,30\\,0)"
+                    t_py = f"if(between(t\\,{reveal_t:.2f}\\,{reveal_t+1.0:.2f})\\,if(lte(t\\,{reveal_t+0.4:.2f})\\,{wait_y}+({tick_target_y}+{tip_off_y}-{wait_y})*(t-{reveal_t:.2f})/0.4\\,{tick_target_y}+{tip_off_y}) + {poke_expr}\\,0)"
                     
                     final_hand_x = f"({' + '.join(pointing_parts_x)} + {w_px} + {t_px})"
                     final_hand_y = f"({' + '.join(pointing_parts_y)} + {w_py} + {t_py})"
@@ -1092,8 +1099,11 @@ class TextQuizRenderer(BaseRenderer):
                     self.filter_graph.append(f"{last_node}[{hand_node}]overlay=enable=between(t\\,{start_t:.2f}\\,{reveal_t+1.0:.2f}):x={final_hand_x}:y={final_hand_y}[v_hnd_{idx}];")
                     last_node = f"[v_hnd_{idx}]"
                     
-                    tick_font = get_font_path("segoepr.ttf", fonts_dir)
-                    last_node = self.add_line_to_graph(last_node, "v", tick_font, "orange", 140, tick_target_x, tick_target_y - 40, align="left", enable=f"between(t\\,{reveal_t+0.4:.2f}\\,{end_t:.2f})", video_id=video_id)
+                    # Use the Tick PNG Asset
+                    if 'tick' in indices:
+                        self.filter_graph.append(f"[{indices['tick']}:v]colorkey=white:0.1,scale=150:-1[vtick{idx}];")
+                        self.filter_graph.append(f"{last_node}[vtick{idx}]overlay=enable=between(t\\,{reveal_t+0.4:.2f}\\,{end_t:.2f}):x={tick_target_x}:y={tick_target_y-30}[v_tick_fin_{idx}];")
+                        last_node = f"[v_tick_fin_{idx}]"
                 
                 t_start_timer = start_t + q_dur
                 
