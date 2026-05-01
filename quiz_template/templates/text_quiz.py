@@ -1033,7 +1033,7 @@ class TextQuizRenderer(BaseRenderer):
                     self.filter_graph.append(f"[{hand_idx}:v]colorkey=white:0.1,scale={h_w}:-1,setpts=PTS-STARTPTS[{hand_node}];")
                     
                     # 1. Pointing at Question (start_t -> start_t + q_dur)
-                    q_text = asset['Question']
+                    q_text = asset['q_text']
                     words = q_text.split()
                     word_dur = q_dur / max(1, len(words))
                     
@@ -1067,7 +1067,7 @@ class TextQuizRenderer(BaseRenderer):
                         line_y += int(70 * 1.15)
 
                     # 2. Ticking Correct Answer (reveal_t -> reveal_t + 1.0)
-                    correct_opt = asset['Options'][asset['correct_idx']]
+                    correct_opt = asset['options'][asset['correct_idx']]
                     # Target is ox + text_width
                     c_ox = (VIDEO_WIDTH - opt_w) // 2
                     c_oy = opt_start_y + asset['correct_idx'] * (opt_h + opt_gap_y)
