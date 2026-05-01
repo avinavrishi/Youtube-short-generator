@@ -1066,7 +1066,16 @@ class TextQuizRenderer(BaseRenderer):
                         pointing_parts_y.append(py)
                         line_y += int(70 * 1.15)
 
-                    # 2. Ticking Correct Answer (reveal_t -> reveal_t + 1.0)
+                    # 2. Waiting Position (During Timer: t_start_timer -> reveal_t)
+                    # Move hand to the right side of the screen, out of the way
+                    wait_x = VIDEO_WIDTH - 150 + tip_off_x
+                    wait_y = opt_start_y + (opt_h * 2) + tip_off_y # Roughly middle of options area
+                    t_start_timer = start_t + q_dur
+                    
+                    w_px = f"if(between(t\\,{t_start_timer:.2f}\\,{reveal_t:.2f})\\,{wait_x:.2f}\\,0)"
+                    w_py = f"if(between(t\\,{t_start_timer:.2f}\\,{reveal_t:.2f})\\,{wait_y:.2f}\\,0)"
+
+                    # 3. Ticking Correct Answer (reveal_t -> reveal_t + 1.0)
                     correct_opt = asset['options'][asset['correct_idx']]
                     c_ox = (VIDEO_WIDTH - opt_w) // 2
                     c_oy = opt_start_y + asset['correct_idx'] * (opt_h + opt_gap_y)
@@ -1074,11 +1083,12 @@ class TextQuizRenderer(BaseRenderer):
                     tick_target_x = c_ox + c_width_est + 50
                     tick_target_y = c_oy + 50
                     
-                    t_px = f"if(between(t\\,{reveal_t:.2f}\\,{reveal_t+1.0:.2f})\\,if(lte(t\\,{reveal_t+0.4:.2f})\\,{VIDEO_WIDTH}-({VIDEO_WIDTH}-({tick_target_x}+{tip_off_x}))*(t-{reveal_t:.2f})/0.4\\,{tick_target_x}+{tip_off_x})\\,0)"
-                    t_py = f"if(between(t\\,{reveal_t:.2f}\\,{reveal_t+1.0:.2f})\\,if(lte(t\\,{reveal_t+0.4:.2f})\\,{VIDEO_HEIGHT}-({VIDEO_HEIGHT}-({tick_target_y}+{tip_off_y}))*(t-{reveal_t:.2f})/0.4\\,{tick_target_y}+{tip_off_y})\\,0)"
+                    # Slide from wait position to tick target
+                    t_px = f"if(between(t\\,{reveal_t:.2f}\\,{reveal_t+1.0:.2f})\\,if(lte(t\\,{reveal_t+0.4:.2f})\\,{wait_x}+({tick_target_x}+{tip_off_x}-{wait_x})*(t-{reveal_t:.2f})/0.4\\,{tick_target_x}+{tip_off_x})\\,0)"
+                    t_py = f"if(between(t\\,{reveal_t:.2f}\\,{reveal_t+1.0:.2f})\\,if(lte(t\\,{reveal_t+0.4:.2f})\\,{wait_y}+({tick_target_y}+{tip_off_y}-{wait_y})*(t-{reveal_t:.2f})/0.4\\,{tick_target_y}+{tip_off_y})\\,0)"
                     
-                    final_hand_x = f"({' + '.join(pointing_parts_x)} + {t_px})"
-                    final_hand_y = f"({' + '.join(pointing_parts_y)} + {t_py})"
+                    final_hand_x = f"({' + '.join(pointing_parts_x)} + {w_px} + {t_px})"
+                    final_hand_y = f"({' + '.join(pointing_parts_y)} + {w_py} + {t_py})"
                     
                     self.filter_graph.append(f"{last_node}[{hand_node}]overlay=enable=between(t\\,{start_t:.2f}\\,{reveal_t+1.0:.2f}):x={final_hand_x}:y={final_hand_y}[v_hnd_{idx}];")
                     last_node = f"[v_hnd_{idx}]"
