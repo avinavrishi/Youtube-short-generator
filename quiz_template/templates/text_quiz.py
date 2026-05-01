@@ -901,6 +901,9 @@ class TextQuizRenderer(BaseRenderer):
                         self.filter_graph.append(f"[{q_box_idx}:v]setpts=PTS-STARTPTS[qbox_{idx}_{i}];")
                         self.filter_graph.append(f"{last_node}[qbox_{idx}_{i}]overlay=enable=between(t\\,{start_t:.2f}\\,{end_t:.2f}):x={ox - padding}:y={oy - padding}[v_o_{idx}_{i}];")
                         last_node = f"[v_o_{idx}_{i}]"
+                    elif template == "omr_hand":
+                        # No box for OMR Hand, just text on ruled paper
+                        pass
                     else:
                         self.filter_graph.append(f"[{opt_box_idx}:v]setpts=PTS-STARTPTS[obox_{idx}_{i}];")
                         padding = 50 if template == "pastel" else 30
@@ -1016,27 +1019,73 @@ class TextQuizRenderer(BaseRenderer):
                         else:
                             last_node = self.add_line_to_graph(last_node, hl_text, question_font, hl_font_col, hl_size, text_x_hl, text_y_hl, hl_wrap, enable=f"between(t\\,{reveal_t:.2f}\\,{end_t:.2f})", align=hl_align, video_id=video_id)
 
-                        if template == "omr_hand" and 'hand' in indices:
-                            # Hand Animation (Sliding from bottom right to tick the box)
-                            hand_idx = indices['hand']
-                            # reach target in 0.5s, stay for 0.5s, disappear
-                            h_w = 500
-                            target_x = ox - 100
-                            target_y = oy - 50
-                            self.filter_graph.append(f"[{hand_idx}:v]colorkey=white:0.1,scale={h_w}:-1,setpts=PTS-STARTPTS[vhand{idx}];")
-                            # Slide-in expression: reach target at reveal_t + 0.4
-                            hand_x = f"if(lte(t\\,{reveal_t+0.4:.2f})\\,{VIDEO_WIDTH}-({VIDEO_WIDTH}-{target_x})*(t-{reveal_t:.2f})/0.4\\,{target_x})"
-                            hand_y = f"if(lte(t\\,{reveal_t+0.4:.2f})\\,{VIDEO_HEIGHT}-({VIDEO_HEIGHT}-{target_y})*(t-{reveal_t:.2f})/0.4\\,{target_y})"
-                            self.filter_graph.append(f"{last_node}[vhand{idx}]overlay=enable=between(t\\,{reveal_t:.2f}\\,{reveal_t+1.0:.2f}):x={hand_x}:y={hand_y}[v_hnd_{idx}];")
-                            last_node = f"[v_hnd_{idx}]"
-                            
-                            # Red Tick Mark
-                            tick_font = get_font_path("segoepr.ttf", fonts_dir)
-                            last_node = self.add_line_to_graph(last_node, "✔", tick_font, "red", 140, ox - 30, oy - 40, align="left", enable=f"between(t\\,{reveal_t+0.4:.2f}\\,{end_t:.2f})", video_id=video_id)
-                        elif template == "omr":
+                        if template == "omr":
                              # Simple Red Tick without hand
                              tick_font = get_font_path("segoepr.ttf", fonts_dir)
                              last_node = self.add_line_to_graph(last_node, "✔", tick_font, "red", 140, ox - 30, oy - 40, align="left", enable=f"between(t\\,{reveal_t:.2f}\\,{end_t:.2f})", video_id=video_id)
+
+                # HAND ANIMATION (OMR_HAND ONLY) - Must be at end of question loop to be on top
+                if template == "omr_hand" and 'hand' in indices:
+                    hand_idx = indices['hand']
+                    h_w = 1000 # Doubled size
+                    hand_node = f"vhand{idx}"
+                    self.filter_graph.append(f"[{hand_idx}:v]colorkey=white:0.1,scale={h_w}:-1,setpts=PTS-STARTPTS[{hand_node}];")
+                    
+                    # 1. Pointing at Question (start_t -> start_t + q_dur)
+                    q_text = asset['Question']
+                    words = q_text.split()
+                    word_dur = q_dur / max(1, len(words))
+                    
+                    # Estimate line-by-line pointing
+                    q_lines = wrap_text(q_text, width=22).split('\n')
+                    pointing_parts_x = []
+                    pointing_parts_y = []
+                    t_curr = start_t
+                    
+                    line_y = q_y
+                    for l_idx, line in enumerate(q_lines):
+                        l_words = line.split()
+                        l_w_dur = q_dur * (len(l_words) / len(words)) if len(words)>0 else 0
+                        l_start_t = t_curr
+                        l_end_t = t_curr + l_w_dur
+                        t_curr = l_end_t
+                        
+                        # Hand moves from left to right of the line
+                        # Center of screen is roughly where text starts if aligned center
+                        l_width_est = len(line) * 35 # Rough estimate
+                        l_x_start = (VIDEO_WIDTH - l_width_est) // 2
+                        l_x_end = l_x_start + l_width_est
+                        
+                        # Adjust y for the line
+                        l_y_pos = line_y + 100 # Offset to point at words
+                        
+                        px = f"if(between(t\\,{l_start_t:.2f}\\,{l_end_t:.2f})\\,{l_x_start}+({l_x_end}-{l_x_start})*(t-{l_start_t:.2f})/{l_w_dur:.2f}\\,0)"
+                        py = f"if(between(t\\,{l_start_t:.2f}\\,{l_end_t:.2f})\\,{l_y_pos}\\,0)"
+                        pointing_parts_x.append(px)
+                        pointing_parts_y.append(py)
+                        line_y += int(70 * 1.15)
+
+                    # 2. Ticking Correct Answer (reveal_t -> reveal_t + 1.0)
+                    correct_opt = asset['Options'][asset['correct_idx']]
+                    # Target is ox + text_width
+                    c_ox = (VIDEO_WIDTH - opt_w) // 2
+                    c_oy = opt_start_y + asset['correct_idx'] * (opt_h + opt_gap_y)
+                    c_width_est = len(correct_opt) * 45
+                    tick_target_x = c_ox + c_width_est + 50
+                    tick_target_y = c_oy + 50
+                    
+                    t_px = f"if(between(t\\,{reveal_t:.2f}\\,{reveal_t+1.0:.2f})\\,if(lte(t\\,{reveal_t+0.4:.2f})\\,{VIDEO_WIDTH}-({VIDEO_WIDTH}-{tick_target_x})*(t-{reveal_t:.2f})/0.4\\,{tick_target_x})\\,0)"
+                    t_py = f"if(between(t\\,{reveal_t:.2f}\\,{reveal_t+1.0:.2f})\\,if(lte(t\\,{reveal_t+0.4:.2f})\\,{VIDEO_HEIGHT}-({VIDEO_HEIGHT}-{tick_target_y})*(t-{reveal_t:.2f})/0.4\\,{tick_target_y})\\,0)"
+                    
+                    final_hand_x = f"({' + '.join(pointing_parts_x)} + {t_px})"
+                    final_hand_y = f"({' + '.join(pointing_parts_y)} + {t_py})"
+                    
+                    self.filter_graph.append(f"{last_node}[{hand_node}]overlay=enable=between(t\\,{start_t:.2f}\\,{reveal_t+1.0:.2f}):x={final_hand_x}:y={final_hand_y}[v_hnd_{idx}];")
+                    last_node = f"[v_hnd_{idx}]"
+                    
+                    # Red Tick Mark at the end of option
+                    tick_font = get_font_path("segoepr.ttf", fonts_dir)
+                    last_node = self.add_line_to_graph(last_node, "✔", tick_font, "orange", 140, tick_target_x, tick_target_y - 20, align="left", enable=f"between(t\\,{reveal_t+0.4:.2f}\\,{end_t:.2f})", video_id=video_id)
                 
                 t_start_timer = start_t + q_dur
                 
