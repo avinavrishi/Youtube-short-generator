@@ -901,8 +901,8 @@ class TextQuizRenderer(BaseRenderer):
                         self.filter_graph.append(f"[{q_box_idx}:v]setpts=PTS-STARTPTS[qbox_{idx}_{i}];")
                         self.filter_graph.append(f"{last_node}[qbox_{idx}_{i}]overlay=enable=between(t\\,{start_t:.2f}\\,{end_t:.2f}):x={ox - padding}:y={oy - padding}[v_o_{idx}_{i}];")
                         last_node = f"[v_o_{idx}_{i}]"
-                    elif template == "omr_hand":
-                        # No box for OMR Hand, just text on ruled paper
+                    elif template in ["omr", "omr_hand"]:
+                        # No box for OMR templates, just text on ruled paper
                         pass
                     else:
                         self.filter_graph.append(f"[{opt_box_idx}:v]setpts=PTS-STARTPTS[obox_{idx}_{i}];")
@@ -1021,9 +1021,8 @@ class TextQuizRenderer(BaseRenderer):
                             last_node = self.add_line_to_graph(last_node, hl_text, question_font, hl_font_col, hl_size, text_x_hl, text_y_hl, hl_wrap, enable=f"between(t\\,{reveal_t:.2f}\\,{end_t:.2f})", align=hl_align, video_id=video_id)
 
                         if template == "omr":
-                             # Simple Red Tick without hand
-                             tick_font = get_font_path("segoepr.ttf", fonts_dir)
-                             last_node = self.add_line_to_graph(last_node, "✔", tick_font, "red", 140, ox - 30, oy - 40, align="left", enable=f"between(t\\,{reveal_t:.2f}\\,{end_t:.2f})", video_id=video_id)
+                             # No tick for simple OMR as requested
+                             pass
 
                 # HAND ANIMATION (OMR_HAND ONLY) - Must be at end of question loop to be on top
                 if template == "omr_hand" and 'hand' in indices:
