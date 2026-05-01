@@ -1030,7 +1030,7 @@ class TextQuizRenderer(BaseRenderer):
                     hand_idx = indices['hand']
                     h_w = 1000 # Doubled size
                     hand_node = f"vhand{idx}"
-                    self.filter_graph.append(f"[{hand_idx}:v]colorkey=white:0.1,scale={h_w}:-1,setpts=PTS-STARTPTS[{hand_node}];")
+                    self.filter_graph.append(f"[{hand_idx}:v]colorkey=0xFFFFFF:0.25:0.1,scale={h_w}:-1,setpts=PTS-STARTPTS[{hand_node}];")
                     
                     # 1. Pointing at Question (start_t -> start_t + q_dur)
                     q_text = asset['q_text']
