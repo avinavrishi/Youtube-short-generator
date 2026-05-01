@@ -1004,8 +1004,9 @@ class TextQuizRenderer(BaseRenderer):
                                     hl_text = opt_display
 
                     # Highlight Box (if correct)
-                    if i == asset['correct_idx']:
+                    if i == asset['correct_idx'] and template != "omr_hand":
                         self.filter_graph.append(f"[{hl_box_idx}:v]setpts=PTS-STARTPTS[hlbox_{idx}];")
+                        padding = 50 if template == "pastel" else 30
                         self.filter_graph.append(f"{last_node}[hlbox_{idx}]overlay=enable=between(t\\,{reveal_t:.2f}\\,{end_t:.2f}):x={ox - padding}:y={oy - padding}[v_h_{idx}];")
                         last_node = f"[v_h_{idx}]"
                         
