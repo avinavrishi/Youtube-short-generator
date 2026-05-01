@@ -83,7 +83,11 @@ def main():
     print("10. Hazard / Impossible Test (High Urgency)")
     print("11. Stadium Live (Sports Broadcaster Style)")
     print("12. 90s Handheld / Gameboy (Retro Nostalgia)")
-    template_choice = input("Choice (1-12): ").strip()
+    print("13. Blueprint / Lab Notes (Technical & Science)")
+    print("14. National Geographic / Wildlife (Nature Documentary)")
+    print("15. OMR / Exam Sheet (Simple)")
+    print("16. OMR / Exam Sheet (With Hand Animation)")
+    template_choice = input("Choice (1-16): ").strip()
     if template_choice == "1":
         template_name = "classic"
     elif template_choice == "3":
@@ -106,6 +110,14 @@ def main():
         template_name = "stadium"
     elif template_choice == "12":
         template_name = "gameboy"
+    elif template_choice == "13":
+        template_name = "blueprint"
+    elif template_choice == "14":
+        template_name = "wildlife"
+    elif template_choice == "15":
+        template_name = "omr"
+    elif template_choice == "16":
+        template_name = "omr_hand"
     else:
         template_name = "grid"
 

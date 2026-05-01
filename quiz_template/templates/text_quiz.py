@@ -42,6 +42,47 @@ class TextQuizRenderer(BaseRenderer):
         img.save(output_path)
         return output_path
 
+    def create_blueprint_bg(self, w, h, output_path):
+        from PIL import Image, ImageDraw
+        # Blueprint Blue
+        img = Image.new('RGB', (w, h), (0, 40, 85))
+        draw = ImageDraw.Draw(img)
+        # White grid lines
+        grid_size = 60
+        for x in range(0, w, grid_size):
+            draw.line([(x, 0), (x, h)], fill=(255, 255, 255, 50), width=1)
+        for y in range(0, h, grid_size):
+            draw.line([(0, y), (w, y)], fill=(255, 255, 255, 50), width=1)
+        img.save(output_path)
+        return output_path
+
+    def create_omr_bg(self, w, h, output_path):
+        from PIL import Image, ImageDraw
+        # Off-white paper color
+        img = Image.new('RGB', (w, h), (250, 250, 245))
+        draw = ImageDraw.Draw(img)
+        # Subtle blue lines (ruled paper)
+        for y in range(100, h, 60):
+            draw.line([(0, y), (w, y)], fill=(200, 220, 255), width=2)
+        # Red margin line
+        draw.line([(120, 0), (120, h)], fill=(255, 200, 200), width=3)
+        img.save(output_path)
+        return output_path
+
+    def create_wildlife_bg(self, w, h, output_path):
+        from PIL import Image, ImageDraw
+        # Deep Forest Green
+        img = Image.new('RGB', (w, h), (10, 30, 10))
+        draw = ImageDraw.Draw(img)
+        # Subtle gradient
+        for y in range(h):
+            r = int(10 + (20 * y / h))
+            g = int(30 + (40 * y / h))
+            b = int(10 + (20 * y / h))
+            draw.line([(0, y), (w, y)], fill=(r, g, b))
+        img.save(output_path)
+        return output_path
+
     def create_gameboy_bg(self, w, h, output_path):
         from PIL import Image, ImageDraw
         # Classic Gameboy Grey Plastic
@@ -100,13 +141,27 @@ class TextQuizRenderer(BaseRenderer):
             if template == "hazard":
                 answer_font = get_font_path("Poppins-Bold.ttf", fonts_dir) # Options stay bold for aggression
             
-            if template in ["hacker", "gameboy"]:
+            if template in ["hacker", "gameboy", "blueprint"]:
                 sys_font = "C:/Windows/Fonts/consola.ttf"
                 if not os.path.exists(sys_font): sys_font = "C:/Windows/Fonts/cour.ttf"
                 if os.path.exists(sys_font):
                     question_font = sanitize_path(sys_font)
                     answer_font = sanitize_path(sys_font)
                     heading_font = sanitize_path(sys_font)
+            elif template == "wildlife":
+                serif_font = "C:/Windows/Fonts/times.ttf"
+                if not os.path.exists(serif_font): serif_font = "C:/Windows/Fonts/georgia.ttf"
+                if os.path.exists(serif_font):
+                    question_font = sanitize_path(serif_font)
+                    answer_font = sanitize_path(serif_font)
+                    heading_font = sanitize_path(serif_font)
+            elif template in ["omr", "omr_hand"]:
+                hw_font = "C:/Windows/Fonts/segoepr.ttf" # Segoe Print
+                if not os.path.exists(hw_font): hw_font = "C:/Windows/Fonts/comic.ttf"
+                if os.path.exists(hw_font):
+                    question_font = sanitize_path(hw_font)
+                    answer_font = sanitize_path(hw_font)
+                    heading_font = sanitize_path(hw_font)
             topic_clean = topic.strip()
             high_ctr_titles = {
                 "ipl 2026": "The Ultimate IPL 2026 Quiz! Can You Score 100%?",
@@ -142,10 +197,15 @@ class TextQuizRenderer(BaseRenderer):
             
             # 1. Background Logic
             self.input_cmds = []
-            has_bgm = os.path.exists(os.path.join(music_dir, "background_music.mp3"))
+            bg_music_file = "jungle.mp3" if template == "wildlife" else "background_music.mp3"
+            bg_music_path = os.path.join(music_dir, bg_music_file)
+            if not os.path.exists(bg_music_path): bg_music_path = os.path.join(music_dir, "background_music.mp3")
+            has_bgm = os.path.exists(bg_music_path)
             if has_bgm:
-                bgm_path = os.path.join(music_dir, "background_music.mp3")
-                self.input_cmds.extend(["-stream_loop", "-1", "-i", bgm_path.replace('\\', '/')])
+                bgm_idx = 0
+                self.input_cmds.extend(["-stream_loop", "-1", "-i", bg_music_path.replace('\\', '/')])
+            else:
+                bgm_idx = -1
             
             bg_input_idx = -1
             if template == "pastel":
@@ -163,6 +223,21 @@ class TextQuizRenderer(BaseRenderer):
                 self.create_gameboy_bg(VIDEO_WIDTH, VIDEO_HEIGHT, gb_bg_path)
                 bg_input_idx = sum(1 for cmd in self.input_cmds if cmd == "-i")
                 self.input_cmds.extend(["-loop", "1", "-i", gb_bg_path])
+            elif template == "blueprint":
+                bp_bg_path = os.path.join(output_dir, f"bp_bg_v{video_id}.png")
+                self.create_blueprint_bg(VIDEO_WIDTH, VIDEO_HEIGHT, bp_bg_path)
+                bg_input_idx = sum(1 for cmd in self.input_cmds if cmd == "-i")
+                self.input_cmds.extend(["-loop", "1", "-i", bp_bg_path])
+            elif template == "wildlife":
+                wl_bg_path = os.path.join(output_dir, f"wl_bg_v{video_id}.png")
+                self.create_wildlife_bg(VIDEO_WIDTH, VIDEO_HEIGHT, wl_bg_path)
+                bg_input_idx = sum(1 for cmd in self.input_cmds if cmd == "-i")
+                self.input_cmds.extend(["-loop", "1", "-i", wl_bg_path])
+            elif template in ["omr", "omr_hand"]:
+                omr_bg_path = os.path.join(output_dir, f"omr_bg_v{video_id}.png")
+                self.create_omr_bg(VIDEO_WIDTH, VIDEO_HEIGHT, omr_bg_path)
+                bg_input_idx = sum(1 for cmd in self.input_cmds if cmd == "-i")
+                self.input_cmds.extend(["-loop", "1", "-i", omr_bg_path])
             elif template == "hazard":
                 hazard_bg_path = os.path.join(output_dir, f"hazard_bg_v{video_id}.png")
                 self.create_hazard_bg(VIDEO_WIDTH, VIDEO_HEIGHT, hazard_bg_path)
@@ -183,6 +258,11 @@ class TextQuizRenderer(BaseRenderer):
 
             offset_before_common = sum(1 for cmd in self.input_cmds if cmd == "-i")
             indices = self.build_common_assets(video_id, offset_before_common)
+            if template == "omr_hand":
+                hand_path = os.path.join(self.assets_dir, "hand_holding_red_pen.png")
+                if os.path.exists(hand_path):
+                    indices['hand'] = sum(1 for cmd in self.input_cmds if cmd == "-i")
+                    self.input_cmds.extend(["-i", hand_path])
             base_input_count = sum(1 for cmd in self.input_cmds if cmd == "-i")
             
             # DRAWING LOGIC WITH EQUAL SPACING
@@ -261,7 +341,7 @@ class TextQuizRenderer(BaseRenderer):
                 l_y = opt_start_y + 4 * opt_h + 3 * opt_gap_y + 40
             elif template == "gameboy":
                 # Must fit within the green screen: [80, 130, w-80, h-430]
-                header_h = 420
+                header_h = 320 # Reduced to prevent overlap
                 q_h = 240
                 opt_h = 130
                 opt_w = 880
@@ -269,9 +349,45 @@ class TextQuizRenderer(BaseRenderer):
                 opt_gap_y = 30
                 l_h = 160
                 
-                q_y = header_h + 40
+                q_y = header_h + 180 # Shifted down for proper spacing
+                opt_start_y = q_y + q_h + 80 
+                l_y = opt_start_y + 4 * opt_h + 3 * opt_gap_y + 40
+            elif template == "blueprint":
+                header_h = 350
+                q_h = 240
+                opt_h = 140
+                opt_w = 920
+                opt_gap_x = 0
+                opt_gap_y = 35
+                l_h = 160
+                
+                q_y = header_h + 80
                 opt_start_y = q_y + q_h + 40
                 l_y = opt_start_y + 4 * opt_h + 3 * opt_gap_y + 40
+            elif template == "wildlife":
+                header_h = 350
+                q_h = 240
+                opt_h = 140
+                opt_w = 900
+                opt_gap_x = 0
+                opt_gap_y = 35
+                l_h = 160
+                
+                q_y = header_h + 80
+                opt_start_y = q_y + q_h + 40
+                l_y = opt_start_y + 4 * opt_h + 3 * opt_gap_y + 40
+            elif template in ["omr", "omr_hand"]:
+                header_h = 300
+                q_h = 240
+                opt_h = 130
+                opt_w = 900
+                opt_gap_x = 0
+                opt_gap_y = 35
+                l_h = 160
+                
+                q_y = header_h + 80
+                opt_start_y = q_y + q_h + 50
+                l_y = opt_start_y + 4 * opt_h + 3 * opt_gap_y + 50
             elif template == "chat":
                 header_h = 200
                 q_h = 200
@@ -406,9 +522,14 @@ class TextQuizRenderer(BaseRenderer):
                 # Broadcaster Blue Background with subtle vignette
                 self.filter_graph.append(f"color=c=0x000032:s={VIDEO_WIDTH}x{VIDEO_HEIGHT}[bg_base{video_id}];")
                 self.filter_graph.append(f"[bg_base{video_id}]vignette=PI/4[bg{video_id}];")
-            elif template in ["pastel", "chat", "hazard", "gameboy"]:
+            elif template in ["pastel", "chat", "hazard", "gameboy", "blueprint", "wildlife"]:
                 # Background already added in the logic above
-                self.filter_graph.append(f"[{bg_input_idx}:v]scale={VIDEO_WIDTH}:{VIDEO_HEIGHT}:force_original_aspect_ratio=increase,crop={VIDEO_WIDTH}:{VIDEO_HEIGHT}[bg{video_id}];")
+                self.filter_graph.append(f"[{bg_input_idx}:v]scale={VIDEO_WIDTH}:{VIDEO_HEIGHT}:force_original_aspect_ratio=increase,crop={VIDEO_WIDTH}:{VIDEO_HEIGHT}[bg_raw{video_id}];")
+                if template == "wildlife":
+                    # Signature Yellow Border
+                    self.filter_graph.append(f"[bg_raw{video_id}]drawbox=x=0:y=0:w={VIDEO_WIDTH}:h={VIDEO_HEIGHT}:color=0xFFCC00:t=40[bg{video_id}];")
+                else:
+                    self.filter_graph.append(f"[bg_raw{video_id}]copy[bg{video_id}];")
             elif bg_input_idx != -1:
                 self.filter_graph.append(f"[{bg_input_idx}:v]scale={VIDEO_WIDTH}:{VIDEO_HEIGHT}:force_original_aspect_ratio=increase,crop={VIDEO_WIDTH}:{VIDEO_HEIGHT}[bg{video_id}];")
             else:
@@ -417,7 +538,7 @@ class TextQuizRenderer(BaseRenderer):
             last_node = f"[bg{video_id}]"
             
             # Header Box
-            if template not in ["chalkboard", "hacker", "pastel", "gameboy"]:
+            if template not in ["chalkboard", "hacker", "pastel", "gameboy", "omr", "omr_hand"]:
                 self.filter_graph.append(f"{last_node}drawbox=x=0:y=0:w={VIDEO_WIDTH}:h={header_h}:color=white:t=fill[v_hbg{video_id}];")
                 last_node = f"[v_hbg{video_id}]"
             
@@ -448,18 +569,33 @@ class TextQuizRenderer(BaseRenderer):
                 lines = wrap_text(topic_display.upper(), width=h_wrap).split('\n')
                 total_text_h = len(lines) * (h_size * 1.15)
                 start_y = (header_h - total_text_h) // 2
-                last_node = self.add_line_to_graph(f"[vh1{video_id}]", topic_display.upper(), heading_font, "white", h_size, 60, start_y, h_wrap, align="left", video_id=video_id)
+                last_node = self.add_line_to_graph(f"[vh1{video_id}]", topic_display.upper(), heading_font, "white", h_size, 0, start_y, h_wrap, align="center", video_id=video_id)
             elif template == "gameboy":
                 h_size = 75 if len(topic_display) < 25 else 60
+                h_wrap = 18 # Added margin by reducing wrap width
+                lines = wrap_text(topic_display.upper(), width=h_wrap).split('\n')
+                total_text_h = len(lines) * (h_size * 1.15)
+                start_y = 180 # Moved down slightly for padding from bezel
+                last_node = self.add_line_to_graph(last_node, topic_display.upper(), heading_font, "0x0f380f", 75, 0, start_y, h_wrap, align="center", video_id=video_id)
+            elif template == "blueprint":
+                h_size = 85 if len(topic_display) < 25 else 70
+                h_wrap = 22 # Reduced to prevent screen overflow
+                lines = wrap_text(topic_display.upper(), width=h_wrap).split('\n')
+                total_text_h = len(lines) * (h_size * 1.15)
+                start_y = (header_h - total_text_h) // 2
+                last_node = self.add_line_to_graph(last_node, topic_display.upper(), heading_font, "red", h_size, 0, start_y, h_wrap, align="center", video_id=video_id)
+            elif template in ["omr", "omr_hand"]:
+                h_size = 80 if len(topic_display) < 25 else 65
                 h_wrap = 24
                 lines = wrap_text(topic_display.upper(), width=h_wrap).split('\n')
                 total_text_h = len(lines) * (h_size * 1.15)
-                start_y = 130 + (420 - total_text_h) // 2
-                last_node = self.add_line_to_graph(last_node, topic_display.upper(), heading_font, "0x0f380f", h_size, 120, start_y, h_wrap, align="left", video_id=video_id)
+                start_y = (header_h - total_text_h) // 2
+                # Use Blue Ink for heading since no white box
+                last_node = self.add_line_to_graph(last_node, topic_display.upper(), heading_font, "0x323296", h_size, 0, start_y, h_wrap, align="center", video_id=video_id)
             elif template == "chat":
                 self.filter_graph.append(f"color=c=0x007AFF:s={VIDEO_WIDTH}x{header_h}[hbar{video_id}];")
                 self.filter_graph.append(f"{last_node}[hbar{video_id}]overlay=x=0:y=0[v_h1_{video_id}];")
-                last_node = self.add_line_to_graph(f"[v_h1_{video_id}]", f"💬 {topic_clean}", heading_font, "white", 60, 40, (header_h - 60) // 2, 30, align="left", video_id=video_id)
+                last_node = self.add_line_to_graph(f"[v_h1_{video_id}]", f"💬 {topic_clean}", heading_font, "white", 60, 0, (header_h - 60) // 2, 30, align="center", video_id=video_id)
             else:
                 if template == "hacker":
                     h_wrap_w = 15
@@ -553,6 +689,33 @@ class TextQuizRenderer(BaseRenderer):
                     out_w = 6
                     radius = 0 # Sharp pixel corners
                     blur_radius = 0
+                elif template in ["omr", "omr_hand"]:
+                    # Exam Sheet: White fill, Thin blue/black border
+                    fill_col = (255, 255, 255, 255)
+                    out_col = (50, 50, 150, 200) # Blue ink color
+                    hl_fill = (255, 250, 250, 255) # Slightly red tint
+                    hl_out = (255, 0, 0, 255) # Teacher's Red
+                    out_w = 3
+                    radius = 15
+                    blur_radius = 5
+                elif template == "wildlife":
+                    # Nat Geo Style: Deep green fill, elegant thin gold/yellow border
+                    fill_col = (10, 40, 10, 230)
+                    out_col = (255, 204, 0, 255)
+                    hl_fill = (255, 204, 0, 255)
+                    hl_out = (255, 255, 255, 255)
+                    out_w = 4
+                    radius = 0 # Sharp elegant corners
+                    blur_radius = 5
+                elif template == "blueprint":
+                    # Technical Blueprint: Dotted/Solid white border, blue tint
+                    fill_col = (0, 60, 120, 150)
+                    out_col = (255, 255, 255, 255)
+                    hl_fill = (255, 255, 255, 200) # Solid white-ish
+                    hl_out = (255, 255, 255, 255)
+                    out_w = 4
+                    radius = 0 # Architectural sharp corners
+                    blur_radius = 5
                 elif template == "chalkboard":
                     fill_col = (0, 0, 0, 0)
                     out_col = (0, 0, 0, 0)
@@ -623,10 +786,21 @@ class TextQuizRenderer(BaseRenderer):
                 audio_mixes.append(f"[{get_input_idx(asset['a_path'])}:a]volume=1.5,adelay={a_at}|{a_at}[a_a{idx}]")
                 if has_ticktock:
                     tt_at = int((start_t+q_dur)*1000)
-                    audio_mixes.append(f"[{get_input_idx(ticktock_path)}:a]atrim=0:{timer},adelay={tt_at}|{tt_at}[a_tt{idx}]")
+                    if template == "omr":
+                        tt_sound = os.path.join(music_dir, "ticktock.mp3")
+                        audio_mixes.append(f"[{get_input_idx(tt_sound)}:a]atrim=0:{timer},adelay={tt_at}|{tt_at}[a_tt{idx}]")
+                    elif template == "omr_hand":
+                        tt_sound = os.path.join(music_dir, "pencil.mp3")
+                        if not os.path.exists(tt_sound): tt_sound = os.path.join(music_dir, "ticktock.mp3")
+                        audio_mixes.append(f"[{get_input_idx(tt_sound)}:a]atrim=0:{timer},adelay={tt_at}|{tt_at}[a_tt{idx}]")
+                    else:
+                        tt_sound = os.path.join(music_dir, "chalk.mp3" if template == "blueprint" else "ticktock.mp3")
+                        if not os.path.exists(tt_sound): tt_sound = ticktock_path
+                        audio_mixes.append(f"[{get_input_idx(tt_sound)}:a]atrim=0:{timer},adelay={tt_at}|{tt_at}[a_tt{idx}]")
                 
-                # Correct Answer Sound (8-bit Level Up for Gameboy)
-                bing_path = os.path.join(music_dir, "levelup.mp3" if template == "gameboy" else "bing.mp3")
+                # Correct Answer Sound (8-bit Level Up for Gameboy / Shutter for Wildlife)
+                reveal_sound_file = "shutter.mp3" if template == "wildlife" else ("levelup.mp3" if template == "gameboy" else "bing.mp3")
+                bing_path = os.path.join(music_dir, reveal_sound_file)
                 if not os.path.exists(bing_path): bing_path = os.path.join(music_dir, "bing.mp3")
                 if os.path.exists(bing_path):
                     audio_mixes.append(f"[{get_input_idx(bing_path)}:a]volume=1.2,adelay={a_at}|{a_at}[a_bing{idx}]")
@@ -646,15 +820,19 @@ class TextQuizRenderer(BaseRenderer):
                         q_text_color = "white"
                     elif template == "hazard":
                         q_text_color = "black"
-                    elif template == "gameboy":
-                        q_text_color = "0x0f380f"
+                    elif template == "omr_hand":
+                        q_text_color = "black"
+                    elif template == "omr":
+                        q_text_color = "black"
+                    elif template in ["gameboy", "blueprint"]:
+                        q_text_color = "white" if template == "blueprint" else "0x0f380f"
                     else:
                         q_text_color = "white" if template in ["millionaire", "chalkboard"] else ("0x00FF00" if template == "hacker" else ("#333333" if template == "pastel" else "yellow"))
                     q_x = 80
                     q_y_text = q_y
                     
-                q_wrap_w = 22 if template == "hacker" else 28
-                q_size = 60 if template == "hazard" else 70
+                q_wrap_w = 22 if template == "blueprint" else (26 if template == "gameboy" else (22 if template == "hacker" else 28))
+                q_size = 60 if template in ["hazard", "gameboy"] else 70
                 last_node = self.add_line_to_graph(last_node, f"Q{idx+1}: {asset['q_text']}", question_font, q_text_color, q_size, q_x, q_y_text, q_wrap_w, enable=f"between(t\\,{start_t:.2f}\\,{end_t:.2f})", align="left" if template == "chat" else "center", fade=True, video_id=video_id)
                 
                 # Question Count Tag
@@ -665,9 +843,11 @@ class TextQuizRenderer(BaseRenderer):
                     tag_color = "#FFD700" # Gold
                 elif template == "hazard":
                     tag_color = "black"
+                elif template in ["omr", "omr_hand"]:
+                    tag_color = "0x323296" # Dark Blue Ink
                 else:
                     tag_color = "white" if template == "chalkboard" else ("0x00FF00" if template == "hacker" else ("#555555" if template == "pastel" else ("#888888" if template == "chat" else "gray")))
-                tag_y = q_y - 60 if template != "chat" else q_y + q_h + 10
+                tag_y = q_y - 50 if template != "chat" else q_y + q_h + 10
                 tag_align = "center" if template != "chat" else "left"
                 tag_x = 0 if template != "chat" else 60
                 last_node = self.add_line_to_graph(last_node, tag_text, answer_font, tag_color, 45, tag_x, tag_y, 30, enable=f"between(t\\,{start_t:.2f}\\,{end_t:.2f})", align=tag_align, fade=True, video_id=video_id)
@@ -692,7 +872,7 @@ class TextQuizRenderer(BaseRenderer):
                         prefix = ["A.", "B.", "C.", "D."][i]
                         opt_display = f"{prefix} {opt_text}"
                         opt_x = VIDEO_WIDTH - opt_w - 30
-                        opt_y_text = o_y + 30
+                        opt_y_text = o_y + 65 # Centered for Chat bubble
                         
                         last_node = self.add_line_to_graph(last_node, opt_display, answer_font, "white", 60, opt_x, opt_y_text, 25, align="left", enable=f"between(t\\,{start_t:.2f}\\,{end_t:.2f})", video_id=video_id)
                         
@@ -735,7 +915,7 @@ class TextQuizRenderer(BaseRenderer):
                         wrapped_opt = wrap_text(opt_text, width=15)
                         lines = wrapped_opt.split('\n')
                         text_h = len(lines) * (50 * 1.15)
-                        ty = oy + (opt_h - text_h) // 2
+                        ty = oy + (opt_h - text_h) // 2 + 30 # Centered for Millionaire
                         
                         # Prefix
                         last_node = self.add_line_to_graph(last_node, prefix, question_font, "orange", 55, ox + 30, ty, 5, enable=f"between(t\\,{start_t:.2f}\\,{end_t:.2f})", align="left", video_id=video_id)
@@ -750,7 +930,7 @@ class TextQuizRenderer(BaseRenderer):
                         wrapped_opt = wrap_text(opt_display, width=16)
                         lines = wrapped_opt.split('\n')
                         text_h = len(lines) * (50 * 1.15)
-                        ty = oy + (opt_h - text_h) // 2
+                        ty = oy + (opt_h - text_h) // 2 + 30 # Centered for Grid
                         text_x_expr = f"{ox}+({opt_w}-text_w)/2"
                         last_node = self.add_line_to_graph(last_node, wrapped_opt, answer_font, "white", 50, text_x_expr, ty, 16, enable=f"between(t\\,{start_t:.2f}\\,{end_t:.2f})", align="custom", video_id=video_id)
                         text_x_hl, text_y_hl = text_x_expr, ty
@@ -761,7 +941,7 @@ class TextQuizRenderer(BaseRenderer):
                             opt_wrap_w = 32
                             lines = wrap_text(opt_display, width=opt_wrap_w).split('\n')
                             text_h = len(lines) * (60 * 1.15)
-                            text_y = oy + (opt_h - text_h) // 2
+                            text_y = oy + (opt_h - text_h) // 2 + 35 # Centered for Retro
                             last_node = self.add_line_to_graph(last_node, opt_display, answer_font, "white", 60, 0, text_y, opt_wrap_w, enable=f"between(t\\,{start_t:.2f}\\,{end_t:.2f})", align="center", video_id=video_id)
                             text_x_hl, text_y_hl = 0, text_y
                             hl_size, hl_align, hl_wrap = 65, "center", opt_wrap_w
@@ -770,7 +950,7 @@ class TextQuizRenderer(BaseRenderer):
                             opt_wrap_w = 16
                             lines = wrap_text(opt_display, width=opt_wrap_w).split('\n')
                             text_h = len(lines) * (65 * 1.15)
-                            text_y = oy + (opt_h - text_h) // 2
+                            text_y = oy + (opt_h - text_h) // 2 + 35 # Centered for Quadrants
                             text_x_expr = f"{ox}+({opt_w}-text_w)/2"
                             last_node = self.add_line_to_graph(last_node, opt_display, question_font, "white", 65, text_x_expr, text_y, opt_wrap_w, enable=f"between(t\\,{start_t:.2f}\\,{end_t:.2f})", align="custom", video_id=video_id)
                             text_x_hl, text_y_hl = text_x_expr, text_y
@@ -780,7 +960,7 @@ class TextQuizRenderer(BaseRenderer):
                             opt_wrap_w = 26
                             lines = wrap_text(opt_display, width=opt_wrap_w).split('\n')
                             text_h = len(lines) * (60 * 1.15)
-                            text_y = oy + (opt_h - text_h) // 2
+                            text_y = oy + (opt_h - text_h) // 2 + 25 # Refined vertical centering for Gameboy font
                             last_node = self.add_line_to_graph(last_node, opt_display, question_font, "0x0f380f", 60, 0, text_y, opt_wrap_w, enable=f"between(t\\,{start_t:.2f}\\,{end_t:.2f})", align="center", video_id=video_id)
                             text_x_hl, text_y_hl = 0, text_y
                             hl_size, hl_align, hl_wrap = 65, "center", opt_wrap_w
@@ -812,7 +992,7 @@ class TextQuizRenderer(BaseRenderer):
                                     opt_wrap_w = 24 if template == "hacker" else 30
                                     lines = wrap_text(opt_display, width=opt_wrap_w).split('\n')
                                     text_h = len(lines) * (60 * 1.15)
-                                    text_y = oy + (opt_h - text_h) // 2 + 10 # Standardized centering
+                                    text_y = oy + (opt_h - text_h) // 2 + 35 # Global vertical centering fix
                                     text_x = ox + 45 # Increased padding to keep A,B,C,D inside
                                     last_node = self.add_line_to_graph(last_node, opt_display, answer_font, opt_font_col, 60, text_x, text_y, opt_wrap_w, enable=f"between(t\\,{start_t:.2f}\\,{end_t:.2f})", align="left", video_id=video_id)
                                     text_x_hl, text_y_hl = text_x, text_y
@@ -834,6 +1014,28 @@ class TextQuizRenderer(BaseRenderer):
                             last_node = self.add_line_to_graph(last_node, hl_text, question_font, hl_font_col, hl_size, text_x_hl, text_y_hl, hl_wrap, enable=f"between(t\\,{reveal_t:.2f}\\,{end_t:.2f})", align=hl_align, video_id=video_id)
                         else:
                             last_node = self.add_line_to_graph(last_node, hl_text, question_font, hl_font_col, hl_size, text_x_hl, text_y_hl, hl_wrap, enable=f"between(t\\,{reveal_t:.2f}\\,{end_t:.2f})", align=hl_align, video_id=video_id)
+
+                        if template == "omr_hand" and 'hand' in indices:
+                            # Hand Animation (Sliding from bottom right to tick the box)
+                            hand_idx = indices['hand']
+                            # reach target in 0.5s, stay for 0.5s, disappear
+                            h_w = 500
+                            target_x = ox - 100
+                            target_y = oy - 50
+                            self.filter_graph.append(f"[{hand_idx}:v]colorkey=white:0.1,scale={h_w}:-1,setpts=PTS-STARTPTS[vhand{idx}];")
+                            # Slide-in expression: reach target at reveal_t + 0.4
+                            hand_x = f"if(lte(t,{reveal_t+0.4:.2f}),{VIDEO_WIDTH}-({VIDEO_WIDTH}-{target_x})*(t-{reveal_t:.2f})/0.4,{target_x})"
+                            hand_y = f"if(lte(t,{reveal_t+0.4:.2f}),{VIDEO_HEIGHT}-({VIDEO_HEIGHT}-{target_y})*(t-{reveal_t:.2f})/0.4,{target_y})"
+                            self.filter_graph.append(f"{last_node}[vhand{idx}]overlay=enable=between(t\\,{reveal_t:.2f}\\,{reveal_t+1.0:.2f}):x={hand_x}:y={hand_y}[v_hnd_{idx}];")
+                            last_node = f"[v_hnd_{idx}]"
+                            
+                            # Red Tick Mark
+                            tick_font = get_font_path("segoepr.ttf", fonts_dir)
+                            last_node = self.add_line_to_graph(last_node, "✔", tick_font, "red", 140, ox - 30, oy - 40, align="left", enable=f"between(t\\,{reveal_t+0.4:.2f}\\,{end_t:.2f})", video_id=video_id)
+                        elif template == "omr":
+                             # Simple Red Tick without hand
+                             tick_font = get_font_path("segoepr.ttf", fonts_dir)
+                             last_node = self.add_line_to_graph(last_node, "✔", tick_font, "red", 140, ox - 30, oy - 40, align="left", enable=f"between(t\\,{reveal_t:.2f}\\,{end_t:.2f})", video_id=video_id)
                 
                 t_start_timer = start_t + q_dur
                 
@@ -879,6 +1081,10 @@ class TextQuizRenderer(BaseRenderer):
                         tw, th = l_w, 20
                         bg_c = "0x000044"
                         fill_c = "0x00FF00" # Neon Green (Grass vibe)
+                    elif template == "blueprint":
+                        tw, th = l_w, 10
+                        bg_c = "white@0.2"
+                        fill_c = "white"
                     else: # hacker
                         tw, th = l_w, 20
                         bg_c = "0x003300"
@@ -901,6 +1107,13 @@ class TextQuizRenderer(BaseRenderer):
                         
                     self.filter_graph.append(f"{last_node}{final_tbar}overlay=enable=between(t\\,{t_start_timer:.2f}\\,{reveal_t:.2f}):x={tx}:y={ty}[vls{idx}];")
                     last_node = f"[vls{idx}]"
+                    
+                    if template == "blueprint":
+                        # Vertical Scan Line (Sweeping Laser)
+                        scan_x = f"{self.side_margin} + {l_w} * (1-{prog_expr})"
+                        self.filter_graph.append(f"color=c=white@0.6:s=10x{VIDEO_HEIGHT}[scan{idx}];")
+                        self.filter_graph.append(f"{last_node}[scan{idx}]overlay=enable=between(t\\,{t_start_timer:.2f}\\,{reveal_t:.2f}):x={scan_x}:y=0[vscan{idx}];")
+                        last_node = f"[vscan{idx}]"
                     
                     if template in ["millionaire", "hacker"]:
                         cd_font = question_font
@@ -964,6 +1177,13 @@ class TextQuizRenderer(BaseRenderer):
             self.filter_graph.append(f"color=c=red:s={VIDEO_WIDTH}x15[pgfg{video_id}];")
             self.filter_graph.append(f"[v_hbg2_{video_id}][pgfg{video_id}]overlay=x='-w+w*(t/{total_duration})':y={VIDEO_HEIGHT-15}[vpb{video_id}];")
             last_node = f"[vpb{video_id}]"
+
+            # End Screen Bell
+            if template in ["omr", "omr_hand"]:
+                bell_path = os.path.join(music_dir, "bell.mp3")
+                if os.path.exists(bell_path):
+                    at = int(score_start * 1000)
+                    audio_mixes.append(f"[{get_input_idx(bell_path)}:a]volume=1.5,adelay={at}|{at}[a_bell]")
 
             # Final mixing
             outro_at = int(score_start * 1000)
