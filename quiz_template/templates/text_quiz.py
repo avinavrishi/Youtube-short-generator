@@ -1035,15 +1035,17 @@ class TextQuizRenderer(BaseRenderer):
                     # 1. Pointing at Question (start_t -> start_t + q_dur)
                     q_text = asset['q_text']
                     words = q_text.split()
-                    word_dur = q_dur / max(1, len(words))
-                    
-                    # Estimate line-by-line pointing
                     q_lines = wrap_text(q_text, width=22).split('\n')
+                    
+                    # Hand Tip Offset (Calibrated for the scale 1000)
+                    tip_off_x = -250
+                    tip_off_y = -450
+                    
                     pointing_parts_x = []
                     pointing_parts_y = []
                     t_curr = start_t
-                    
                     line_y = q_y
+                    
                     for l_idx, line in enumerate(q_lines):
                         l_words = line.split()
                         l_w_dur = q_dur * (len(l_words) / len(words)) if len(words)>0 else 0
@@ -1051,32 +1053,29 @@ class TextQuizRenderer(BaseRenderer):
                         l_end_t = t_curr + l_w_dur
                         t_curr = l_end_t
                         
-                        # Hand moves from left to right of the line
-                        # Center of screen is roughly where text starts if aligned center
-                        l_width_est = len(line) * 35 # Rough estimate
+                        l_width_est = len(line) * 35
                         l_x_start = (VIDEO_WIDTH - l_width_est) // 2
                         l_x_end = l_x_start + l_width_est
                         
-                        # Adjust y for the line
-                        l_y_pos = line_y + 100 # Offset to point at words
+                        # Point slightly above/at the words
+                        l_y_pos = line_y + 80
                         
-                        px = f"if(between(t\\,{l_start_t:.2f}\\,{l_end_t:.2f})\\,{l_x_start}+({l_x_end}-{l_x_start})*(t-{l_start_t:.2f})/{l_w_dur:.2f}\\,0)"
-                        py = f"if(between(t\\,{l_start_t:.2f}\\,{l_end_t:.2f})\\,{l_y_pos}\\,0)"
+                        px = f"if(between(t\\,{l_start_t:.2f}\\,{l_end_t:.2f})\\,{l_x_start}+({l_x_end}-{l_x_start})*(t-{l_start_t:.2f})/{l_w_dur:.2f}+{tip_off_x:.2f}\\,0)"
+                        py = f"if(between(t\\,{l_start_t:.2f}\\,{l_end_t:.2f})\\,{l_y_pos}+{tip_off_y:.2f}\\,0)"
                         pointing_parts_x.append(px)
                         pointing_parts_y.append(py)
                         line_y += int(70 * 1.15)
 
                     # 2. Ticking Correct Answer (reveal_t -> reveal_t + 1.0)
                     correct_opt = asset['options'][asset['correct_idx']]
-                    # Target is ox + text_width
                     c_ox = (VIDEO_WIDTH - opt_w) // 2
                     c_oy = opt_start_y + asset['correct_idx'] * (opt_h + opt_gap_y)
                     c_width_est = len(correct_opt) * 45
                     tick_target_x = c_ox + c_width_est + 50
                     tick_target_y = c_oy + 50
                     
-                    t_px = f"if(between(t\\,{reveal_t:.2f}\\,{reveal_t+1.0:.2f})\\,if(lte(t\\,{reveal_t+0.4:.2f})\\,{VIDEO_WIDTH}-({VIDEO_WIDTH}-{tick_target_x})*(t-{reveal_t:.2f})/0.4\\,{tick_target_x})\\,0)"
-                    t_py = f"if(between(t\\,{reveal_t:.2f}\\,{reveal_t+1.0:.2f})\\,if(lte(t\\,{reveal_t+0.4:.2f})\\,{VIDEO_HEIGHT}-({VIDEO_HEIGHT}-{tick_target_y})*(t-{reveal_t:.2f})/0.4\\,{tick_target_y})\\,0)"
+                    t_px = f"if(between(t\\,{reveal_t:.2f}\\,{reveal_t+1.0:.2f})\\,if(lte(t\\,{reveal_t+0.4:.2f})\\,{VIDEO_WIDTH}-({VIDEO_WIDTH}-({tick_target_x}+{tip_off_x}))*(t-{reveal_t:.2f})/0.4\\,{tick_target_x}+{tip_off_x})\\,0)"
+                    t_py = f"if(between(t\\,{reveal_t:.2f}\\,{reveal_t+1.0:.2f})\\,if(lte(t\\,{reveal_t+0.4:.2f})\\,{VIDEO_HEIGHT}-({VIDEO_HEIGHT}-({tick_target_y}+{tip_off_y}))*(t-{reveal_t:.2f})/0.4\\,{tick_target_y}+{tip_off_y})\\,0)"
                     
                     final_hand_x = f"({' + '.join(pointing_parts_x)} + {t_px})"
                     final_hand_y = f"({' + '.join(pointing_parts_y)} + {t_py})"
@@ -1084,9 +1083,8 @@ class TextQuizRenderer(BaseRenderer):
                     self.filter_graph.append(f"{last_node}[{hand_node}]overlay=enable=between(t\\,{start_t:.2f}\\,{reveal_t+1.0:.2f}):x={final_hand_x}:y={final_hand_y}[v_hnd_{idx}];")
                     last_node = f"[v_hnd_{idx}]"
                     
-                    # Red Tick Mark at the end of option
                     tick_font = get_font_path("segoepr.ttf", fonts_dir)
-                    last_node = self.add_line_to_graph(last_node, "✔", tick_font, "orange", 140, tick_target_x, tick_target_y - 20, align="left", enable=f"between(t\\,{reveal_t+0.4:.2f}\\,{end_t:.2f})", video_id=video_id)
+                    last_node = self.add_line_to_graph(last_node, "v", tick_font, "orange", 140, tick_target_x, tick_target_y - 40, align="left", enable=f"between(t\\,{reveal_t+0.4:.2f}\\,{end_t:.2f})", video_id=video_id)
                 
                 t_start_timer = start_t + q_dur
                 
