@@ -1025,8 +1025,8 @@ class TextQuizRenderer(BaseRenderer):
                             target_y = oy - 50
                             self.filter_graph.append(f"[{hand_idx}:v]colorkey=white:0.1,scale={h_w}:-1,setpts=PTS-STARTPTS[vhand{idx}];")
                             # Slide-in expression: reach target at reveal_t + 0.4
-                            hand_x = f"if(lte(t,{reveal_t+0.4:.2f}),{VIDEO_WIDTH}-({VIDEO_WIDTH}-{target_x})*(t-{reveal_t:.2f})/0.4,{target_x})"
-                            hand_y = f"if(lte(t,{reveal_t+0.4:.2f}),{VIDEO_HEIGHT}-({VIDEO_HEIGHT}-{target_y})*(t-{reveal_t:.2f})/0.4,{target_y})"
+                            hand_x = f"if(lte(t\\,{reveal_t+0.4:.2f})\\,{VIDEO_WIDTH}-({VIDEO_WIDTH}-{target_x})*(t-{reveal_t:.2f})/0.4\\,{target_x})"
+                            hand_y = f"if(lte(t\\,{reveal_t+0.4:.2f})\\,{VIDEO_HEIGHT}-({VIDEO_HEIGHT}-{target_y})*(t-{reveal_t:.2f})/0.4\\,{target_y})"
                             self.filter_graph.append(f"{last_node}[vhand{idx}]overlay=enable=between(t\\,{reveal_t:.2f}\\,{reveal_t+1.0:.2f}):x={hand_x}:y={hand_y}[v_hnd_{idx}];")
                             last_node = f"[v_hnd_{idx}]"
                             
