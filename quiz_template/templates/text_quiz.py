@@ -156,7 +156,8 @@ class TextQuizRenderer(BaseRenderer):
                     answer_font = sanitize_path(serif_font)
                     heading_font = sanitize_path(serif_font)
             elif template in ["omr", "omr_hand"]:
-                hw_font = "C:/Windows/Fonts/segoepr.ttf" # Segoe Print
+                hw_font = os.path.join(fonts_dir, "segoepr.ttf") # Local copy
+                if not os.path.exists(hw_font): hw_font = "C:/Windows/Fonts/segoepr.ttf"
                 if not os.path.exists(hw_font): hw_font = "C:/Windows/Fonts/comic.ttf"
                 if os.path.exists(hw_font):
                     question_font = sanitize_path(hw_font)
