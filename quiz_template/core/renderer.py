@@ -38,11 +38,11 @@ class BaseRenderer:
         ]
 
         self.outro_variations = [
-            "Comment your score now."
+            "Comment your score now.",
             "Drop your score below.",
-            "Did you get 3 out of 3.",
+            "Did you get {Qty} out of {Qty}.",
             "Be honest, what’s your score.",
-            "Only geniuses got all 3 right."
+            "Only geniuses got all {Qty} right."
         ]
         
         self.channel_cta = "Subscribe to Quiz Raptor for more fun and tricky quizzes!"
@@ -96,8 +96,11 @@ class BaseRenderer:
     def render_final(self, cmd, filter_script_path, out_path, total_duration, last_video_node, video_id):
         ffmpeg_path = shutil.which("ffmpeg") or imageio_ffmpeg.get_ffmpeg_exe()
         cmd[0] = ffmpeg_path
+        # Use the newer syntax if it fixes Windows path issues, or keep -filter_complex_script
+        # normalizing path to use backslashes for the script file itself (FFmpeg on Windows sometimes prefers this)
+        norm_script = os.path.normpath(filter_script_path)
         cmd.extend([
-            "-filter_complex_script", filter_script_path, "-map", last_video_node, "-map", f"[aout{video_id}]",
+            "-filter_complex_script", norm_script, "-map", last_video_node, "-map", f"[aout{video_id}]",
             "-t", str(total_duration), "-c:v", "libx264", "-preset", "ultrafast", "-crf", "28", "-c:a", "aac", out_path
         ])
         

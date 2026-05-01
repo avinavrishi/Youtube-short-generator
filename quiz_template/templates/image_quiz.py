@@ -9,7 +9,7 @@ from core.renderer import BaseRenderer, VIDEO_WIDTH, VIDEO_HEIGHT
 import imageio_ffmpeg
 
 class ImageQuizRenderer(BaseRenderer):
-    def build_video(self, video_id, topic, questions, bg_type, music_dir, images_dir, videos_dir, fonts_dir, voiceovers_dir, output_dir, tts_voice, is_preview=False):
+    def build_video(self, video_id, topic, questions, bg_type, music_dir, images_dir, videos_dir, fonts_dir, voiceovers_dir, output_dir, tts_voice, is_preview=False, template="classic"):
         try:
             print(f"\n[Engine][V{video_id}] Building Image Quiz: {topic}")
             qty = len(questions)
@@ -100,7 +100,7 @@ class ImageQuizRenderer(BaseRenderer):
                 temp_time = end_t
             
             # Outro Voiceover
-            outro_hook = random.choice(self.outro_variations)
+            outro_hook = random.choice(self.outro_variations).format(Qty=len(questions))
             outro_text = f"{outro_hook} {self.channel_cta}"
             outro_audio_path = os.path.join(voiceovers_dir, f"outro_{get_hash(outro_text)}.mp3")
             asyncio.run(generate_voiceover(outro_text, outro_audio_path, tts_voice))

@@ -12,16 +12,25 @@ def wrap_text(text: str, width: int = 28) -> str:
     return "\n".join(lines)
 
 def sanitize_path(p: str) -> str:
+    # Use relative path if possible to avoid Windows drive letter colon issues in FFmpeg filters
+    try:
+        rel = os.path.relpath(p)
+        if not rel.startswith('..'):
+            return rel.replace('\\', '/')
+    except:
+        pass
+    # Fallback to absolute with escaped colon
     return os.path.abspath(p).replace('\\', '/').replace(':', '\\:')
 
 def safe_text(text: str) -> str:
+    # FFmpeg drawtext escaping is nightmare-ish. 
+    # For text inside single quotes, we escape ' as '\''
     return (
-        text.replace('\\', '\\\\')   # escape backslash
-            .replace(':', '\\:')     # REQUIRED
-            .replace(',', '\\,')     # REQUIRED
-            .replace("'", "\\'")     # simple escape only
-            .replace('%', '\\%')     # VERY IMPORTANT for drawtext
-            .replace('?', '\\?')
+        text.replace('\\', '\\\\')
+            .replace("'", "'\\''") 
+            .replace(':', '\\:')
+            .replace(',', '\\,')
+            .replace('%', '\\%')
     )
 
 def escape_expr(expr: str) -> str:
