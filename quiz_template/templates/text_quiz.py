@@ -85,18 +85,25 @@ class TextQuizRenderer(BaseRenderer):
 
     def create_gameboy_bg(self, w, h, output_path):
         from PIL import Image, ImageDraw
-        # Classic Gameboy Grey Plastic
-        img = Image.new('RGB', (w, h), (150, 150, 150))
+        # Classic Gameboy Grey Plastic Body
+        img = Image.new('RGB', (w, h), (180, 180, 180))
         draw = ImageDraw.Draw(img)
         
-        # Screen Bezel (Darker Grey)
-        draw.rectangle([50, 100, w-50, h-400], fill=(80, 80, 80))
+        # Screen Bezel (Dark Grey) - Expanded downwards
+        bezel_margin = 80
+        draw.rounded_rectangle([bezel_margin, 100, w-bezel_margin, h-100], radius=40, fill=(70, 70, 70))
         
-        # LCD Screen (Greenish tint)
-        draw.rectangle([80, 130, w-80, h-430], fill=(155, 188, 15))
+        # LCD Screen (Pea Green #9bbc0f) - Expanded downwards
+        lcd_margin = 120
+        draw.rectangle([lcd_margin, 140, w-lcd_margin, h-160], fill=(155, 188, 15))
         
-        # Decorative dots/lines
-        draw.text((100, 50), "DOT MATRIX WITH STEREO SOUND", fill=(50, 50, 50))
+        # "DOT MATRIX WITH STEREO SOUND" text
+        try:
+            draw.text((w//2, 115), "DOT MATRIX WITH STEREO SOUND", fill=(100, 100, 100), anchor="mm")
+        except: pass
+        
+        # Vertical battery light
+        draw.ellipse([bezel_margin + 15, 250, bezel_margin + 35, 270], fill=(200, 0, 0))
         
         img.save(output_path)
         return output_path
@@ -148,6 +155,14 @@ class TextQuizRenderer(BaseRenderer):
                     question_font = sanitize_path(sys_font)
                     answer_font = sanitize_path(sys_font)
                     heading_font = sanitize_path(sys_font)
+            elif template == "gameboy":
+                # Distinct fonts for Gameboy
+                heading_font = os.path.join(fonts_dir, "BebasNeue-Regular.ttf")
+                question_font = os.path.join(fonts_dir, "Poppins-Bold.ttf")
+                answer_font = os.path.join(fonts_dir, "Poppins-Regular.ttf")
+                heading_font = sanitize_path(heading_font)
+                question_font = sanitize_path(question_font)
+                answer_font = sanitize_path(answer_font)
             elif template == "wildlife":
                 serif_font = "C:/Windows/Fonts/times.ttf"
                 if not os.path.exists(serif_font): serif_font = "C:/Windows/Fonts/georgia.ttf"
@@ -259,7 +274,12 @@ class TextQuizRenderer(BaseRenderer):
 
             offset_before_common = sum(1 for cmd in self.input_cmds if cmd == "-i")
             indices = self.build_common_assets(video_id, offset_before_common)
-            if template == "omr_hand":
+            if template == "gameboy":
+                gb_path = os.path.join(self.assets_dir, "gameboy_controls.png")
+                if os.path.exists(gb_path):
+                    indices['gb_ctrl'] = sum(1 for cmd in self.input_cmds if cmd == "-i")
+                    self.input_cmds.extend(["-i", gb_path])
+            elif template == "omr_hand":
                 hand_path = os.path.join(self.assets_dir, "hand_holding_red_pen.png")
                 if os.path.exists(hand_path):
                     indices['hand'] = sum(1 for cmd in self.input_cmds if cmd == "-i")
@@ -406,6 +426,18 @@ class TextQuizRenderer(BaseRenderer):
                 q_y = header_h + 100
                 opt_start_y = q_y + q_h + 50
                 l_y = opt_start_y + 4 * opt_h + 3 * opt_gap_y + 40
+            elif template == "gameboy":
+                header_h = 200
+                q_h = 300
+                opt_h = 110
+                opt_w = 650
+                opt_gap_x = 0
+                opt_gap_y = 20
+                l_h = 100
+                
+                q_y = 200 # Fixed y for Gameboy screen
+                opt_start_y = q_y + q_h + 30
+                l_y = opt_start_y + 4 * opt_h + 3 * opt_gap_y + 30
             else: # classic, chalkboard, hacker, pastel
                 header_h = 320
                 q_h = 240
@@ -577,12 +609,17 @@ class TextQuizRenderer(BaseRenderer):
                 start_y = (header_h - total_text_h) // 2
                 last_node = self.add_line_to_graph(f"[vh1{video_id}]", topic_display.upper(), heading_font, "white", h_size, 0, start_y, h_wrap, align="center", video_id=video_id)
             elif template == "gameboy":
-                h_size = 75 if len(topic_display) < 25 else 60
-                h_wrap = 18 # Added margin by reducing wrap width
+                h_size = 90 if len(topic_display) < 20 else 75
+                h_wrap = 15 
                 lines = wrap_text(topic_display.upper(), width=h_wrap).split('\n')
                 total_text_h = len(lines) * (h_size * 1.15)
-                start_y = 180 # Moved down slightly for padding from bezel
-                last_node = self.add_line_to_graph(last_node, topic_display.upper(), heading_font, "0x0f380f", 75, 0, start_y, h_wrap, align="center", video_id=video_id)
+                start_y = 200 
+                # Black with greenish glow for Gameboy
+                glow_str = ":shadowcolor=0x8bac0f@0.6:shadowx=4:shadowy=4"
+                last_node = self.add_line_to_graph(last_node, topic_display.upper(), heading_font, "black", h_size, 0, start_y, h_wrap, align="center", video_id=video_id)
+                # Apply glow manually since add_line_to_graph doesn't take extra args easily
+                # I'll modify the previous filter string to add shadow if needed, or just keep it simple.
+                # Actually, I'll update add_line_to_graph to support shadow soon, but for now I'll just use black.
             elif template == "blueprint":
                 h_size = 85 if len(topic_display) < 25 else 70
                 h_wrap = 22 # Reduced to prevent screen overflow
@@ -687,13 +724,13 @@ class TextQuizRenderer(BaseRenderer):
                     radius = 0 # Sharp corners
                     blur_radius = 10
                 elif template == "gameboy":
-                    # 8-bit Pixel boxes: Dark green border, Lighter green fill
-                    fill_col = (130, 160, 10, 255)
-                    out_col = (15, 56, 15, 255)
-                    hl_fill = (15, 56, 15, 255)
-                    hl_out = (255, 255, 255, 255)
+                    # Outlined Box for Gameboy
+                    fill_col = (139, 172, 15, 0) # Transparent fill
+                    out_col = (15, 56, 15, 255) # Darkest Green
+                    hl_fill = (15, 56, 15, 255) # Dark fill for highlight
+                    hl_out = (15, 56, 15, 255)
                     out_w = 6
-                    radius = 0 # Sharp pixel corners
+                    radius = 0 # Sharp corners
                     blur_radius = 0
                 elif template in ["omr", "omr_hand"]:
                     # Exam Sheet: White fill, Thin blue/black border
@@ -755,7 +792,7 @@ class TextQuizRenderer(BaseRenderer):
 
                 # Normal box
                 b_img = Image.new('RGBA', (opt_box_w + 100, opt_box_h + 100), (0,0,0,0))
-                if template not in ["chalkboard", "hacker"]:
+                if template not in ["chalkboard", "hacker", "gameboy"]:
                     s_draw = ImageDraw.Draw(b_img)
                     shadow_col = (0,0,0,60) if template == "pastel" else (0,0,0,200)
                     s_draw.rounded_rectangle((50, 50, opt_box_w + 50, opt_box_h + 50), radius=radius, fill=shadow_col)
@@ -768,7 +805,7 @@ class TextQuizRenderer(BaseRenderer):
                 
                 # Highlight box
                 h_img = Image.new('RGBA', (opt_box_w + 100, opt_box_h + 100), (0,0,0,0))
-                if template not in ["chalkboard", "hacker"]:
+                if template not in ["chalkboard", "hacker", "gameboy"]:
                     hs_draw = ImageDraw.Draw(h_img)
                     h_shadow_col = (255, 107, 107, 100) if template == "pastel" else (0,200,0,200)
                     hs_draw.rounded_rectangle((50, 50, opt_box_w + 50, opt_box_h + 50), radius=radius, fill=h_shadow_col)
@@ -824,14 +861,14 @@ class TextQuizRenderer(BaseRenderer):
                         q_text_color = "#FF00FF"
                     elif template == "stadium":
                         q_text_color = "white"
-                    elif template == "hazard":
+                    elif template == "gameboy":
+                        q_text_color = "0x0f380f"
+                    elif template == "blueprint":
                         q_text_color = "black"
                     elif template == "omr_hand":
                         q_text_color = "black"
                     elif template == "omr":
                         q_text_color = "black"
-                    elif template in ["gameboy", "blueprint"]:
-                        q_text_color = "white" if template == "blueprint" else "0x0f380f"
                     else:
                         q_text_color = "white" if template in ["millionaire", "chalkboard"] else ("0x00FF00" if template == "hacker" else ("#333333" if template == "pastel" else "yellow"))
                     q_x = 80
@@ -847,6 +884,8 @@ class TextQuizRenderer(BaseRenderer):
                     tag_color = "#00FFFF"
                 elif template == "stadium":
                     tag_color = "#FFD700" # Gold
+                elif template == "gameboy":
+                    tag_color = "black"
                 elif template == "hazard":
                     tag_color = "black"
                 elif template in ["omr", "omr_hand"]:
@@ -909,6 +948,22 @@ class TextQuizRenderer(BaseRenderer):
                     elif template in ["omr", "omr_hand"]:
                         # No box for OMR templates, just text on ruled paper
                         pass
+                    elif template == "gameboy":
+                        # Draw box directly to ensure it stays inside LCD
+                        box_margin = 150 # Safe margin from screen edges
+                        box_x = box_margin
+                        box_w = VIDEO_WIDTH - 2 * box_margin
+                        box_y = oy
+                        box_h = opt_h
+                        
+                        # Outer Border (Dark Green)
+                        self.filter_graph.append(f"{last_node}drawbox=x={box_x}:y={box_y}:w={box_w}:h={box_h}:color=0x0f380f:t=6[v_gb_b_{idx}_{i}];")
+                        last_node = f"[v_gb_b_{idx}_{i}]"
+                        
+                        # Correct Highlight
+                        if i == asset['correct_idx']:
+                            self.filter_graph.append(f"{last_node}drawbox=enable=between(t\\,{reveal_t:.2f}\\,{end_t:.2f}):x={box_x+6}:y={box_y+6}:w={box_w-12}:h={box_h-12}:color=0x0f380f:t=fill[v_gb_h_{idx}_{i}];")
+                            last_node = f"[v_gb_h_{idx}_{i}]"
                     else:
                         self.filter_graph.append(f"[{opt_box_idx}:v]setpts=PTS-STARTPTS[obox_{idx}_{i}];")
                         padding = 50 if template == "pastel" else 30
@@ -997,7 +1052,7 @@ class TextQuizRenderer(BaseRenderer):
                                     hl_size, hl_align, hl_wrap = 65, "left", opt_wrap_w
                                     hl_text = opt_display
                                 else:
-                                    opt_font_col = "0x00FF00" if template == "hacker" else ("#333333" if template == "pastel" else "white")
+                                    opt_font_col = "0x00FF00" if template == "hacker" else ("#333333" if template == "pastel" else ("black" if template == "gameboy" else "white"))
                                     opt_wrap_w = 24 if template == "hacker" else 30
                                     lines = wrap_text(opt_display, width=opt_wrap_w).split('\n')
                                     text_h = len(lines) * (60 * 1.15)
@@ -1009,7 +1064,7 @@ class TextQuizRenderer(BaseRenderer):
                                     hl_text = opt_display
 
                     # Highlight Box (if correct)
-                    if i == asset['correct_idx'] and template != "omr_hand":
+                    if i == asset['correct_idx'] and template not in ["omr_hand", "gameboy"]:
                         self.filter_graph.append(f"[{hl_box_idx}:v]setpts=PTS-STARTPTS[hlbox_{idx}];")
                         padding = 50 if template == "pastel" else 30
                         self.filter_graph.append(f"{last_node}[hlbox_{idx}]overlay=enable=between(t\\,{reveal_t:.2f}\\,{end_t:.2f}):x={ox - padding}:y={oy - padding}[v_h_{idx}];")
@@ -1024,6 +1079,9 @@ class TextQuizRenderer(BaseRenderer):
                             last_node = self.add_line_to_graph(last_node, hl_text, question_font, hl_font_col, hl_size, text_x_hl, text_y_hl, hl_wrap, enable=f"between(t\\,{reveal_t:.2f}\\,{end_t:.2f})", align=hl_align, video_id=video_id)
                         else:
                             last_node = self.add_line_to_graph(last_node, hl_text, question_font, hl_font_col, hl_size, text_x_hl, text_y_hl, hl_wrap, enable=f"between(t\\,{reveal_t:.2f}\\,{end_t:.2f})", align=hl_align, video_id=video_id)
+                    elif i == asset['correct_idx'] and template == "gameboy":
+                        # Highlight Text for Gameboy (White on Dark Green)
+                        last_node = self.add_line_to_graph(last_node, hl_text, question_font, "white", hl_size, text_x_hl, text_y_hl, hl_wrap, enable=f"between(t\\,{reveal_t:.2f}\\,{end_t:.2f})", align=hl_align, video_id=video_id)
 
                         if template == "omr":
                              # No tick for simple OMR as requested
