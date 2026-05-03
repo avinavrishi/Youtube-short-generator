@@ -104,7 +104,8 @@ def main():
     print("14. National Geographic / Wildlife (Nature Documentary)")
     print("15. OMR / Exam Sheet (Simple)")
     print("16. OMR / Exam Sheet (With Hand Animation)")
-    template_choice = input("Choice (1-16): ").strip()
+    print("17. OMR / Exam Sheet (With Cursor Animation)")
+    template_choice = input("Choice (1-17): ").strip()
     if template_choice == "1":
         template_name = "classic"
     elif template_choice == "3":
@@ -135,6 +136,8 @@ def main():
         template_name = "omr"
     elif template_choice == "16":
         template_name = "omr_hand"
+    elif template_choice == "17":
+        template_name = "omr_cursor"
     else:
         template_name = "grid"
 

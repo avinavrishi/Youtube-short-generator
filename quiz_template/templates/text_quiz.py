@@ -171,7 +171,7 @@ class TextQuizRenderer(BaseRenderer):
                     question_font = sanitize_path(serif_font)
                     answer_font = sanitize_path(serif_font)
                     heading_font = sanitize_path(serif_font)
-            elif template in ["omr", "omr_hand"]:
+            elif template in ["omr", "omr_hand", "omr_cursor"]:
                 hw_font = os.path.join(fonts_dir, "segoepr.ttf") # Local copy
                 if not os.path.exists(hw_font): hw_font = "C:/Windows/Fonts/segoepr.ttf"
                 if not os.path.exists(hw_font): hw_font = "C:/Windows/Fonts/comic.ttf"
@@ -259,7 +259,7 @@ class TextQuizRenderer(BaseRenderer):
                 self.create_wildlife_bg(VIDEO_WIDTH, VIDEO_HEIGHT, wl_bg_path)
                 bg_input_idx = sum(1 for cmd in self.input_cmds if cmd == "-i")
                 self.input_cmds.extend(["-loop", "1", "-i", wl_bg_path])
-            elif template in ["omr", "omr_hand"]:
+            elif template in ["omr", "omr_hand", "omr_cursor"]:
                 omr_bg_path = os.path.join(output_dir, f"omr_bg_v{video_id}.png")
                 self.create_omr_bg(VIDEO_WIDTH, VIDEO_HEIGHT, omr_bg_path)
                 bg_input_idx = sum(1 for cmd in self.input_cmds if cmd == "-i")
@@ -289,8 +289,11 @@ class TextQuizRenderer(BaseRenderer):
                 if os.path.exists(gb_path):
                     indices['gb_ctrl'] = sum(1 for cmd in self.input_cmds if cmd == "-i")
                     self.input_cmds.extend(["-i", gb_path])
-            elif template == "omr_hand":
+            elif template in ["omr_hand", "omr_cursor"]:
                 hand_path = os.path.join(self.assets_dir, "hand_holding_red_pen.png")
+                if template == "omr_cursor":
+                    hand_path = os.path.join(self.assets_dir, "hand_cursor.png")
+                
                 if os.path.exists(hand_path):
                     indices['hand'] = sum(1 for cmd in self.input_cmds if cmd == "-i")
                     self.input_cmds.extend(["-i", hand_path])
@@ -418,7 +421,7 @@ class TextQuizRenderer(BaseRenderer):
                 q_y = header_h + 80
                 opt_start_y = q_y + q_h + 40
                 l_y = opt_start_y + 4 * opt_h + 3 * opt_gap_y + 40
-            elif template in ["omr", "omr_hand"]:
+            elif template in ["omr", "omr_hand", "omr_cursor"]:
                 header_h = 300
                 q_h = 240
                 opt_h = 130
@@ -643,7 +646,7 @@ class TextQuizRenderer(BaseRenderer):
                 total_text_h = len(lines) * (h_size * 1.15)
                 start_y = (header_h - total_text_h) // 2
                 last_node = self.add_line_to_graph(last_node, topic_display.upper(), heading_font, "red", h_size, 0, start_y, h_wrap, align="center", video_id=video_id)
-            elif template in ["omr", "omr_hand"]:
+            elif template in ["omr", "omr_hand", "omr_cursor"]:
                 h_size = 80 if len(topic_display) < 25 else 65
                 h_wrap = 24
                 lines = wrap_text(topic_display.upper(), width=h_wrap).split('\n')
@@ -848,8 +851,10 @@ class TextQuizRenderer(BaseRenderer):
                     if template == "omr":
                         tt_sound = os.path.join(music_dir, "ticktock.mp3")
                         audio_mixes.append(f"[{get_input_idx(tt_sound)}:a]atrim=0:{timer},adelay={tt_at}|{tt_at}[a_tt{idx}]")
-                    elif template == "omr_hand":
+                    elif template in ["omr_hand", "omr_cursor"]:
                         tt_sound = os.path.join(music_dir, "pencil.mp3")
+                        if template == "omr_cursor":
+                            tt_sound = os.path.join(music_dir, "ticktock.mp3") # No pencil sound for cursor
                         if not os.path.exists(tt_sound): tt_sound = os.path.join(music_dir, "ticktock.mp3")
                         audio_mixes.append(f"[{get_input_idx(tt_sound)}:a]atrim=0:{timer},adelay={tt_at}|{tt_at}[a_tt{idx}]")
                     else:
@@ -881,9 +886,7 @@ class TextQuizRenderer(BaseRenderer):
                         q_text_color = "0x0f380f"
                     elif template == "blueprint":
                         q_text_color = "black"
-                    elif template == "omr_hand":
-                        q_text_color = "black"
-                    elif template == "omr":
+                    elif template in ["omr", "omr_hand", "omr_cursor"]:
                         q_text_color = "black"
                     else:
                         q_text_color = "white" if template in ["millionaire", "chalkboard"] else ("0x00FF00" if template == "hacker" else ("#333333" if template == "pastel" else "yellow"))
@@ -961,7 +964,7 @@ class TextQuizRenderer(BaseRenderer):
                         self.filter_graph.append(f"[{q_box_idx}:v]setpts=PTS-STARTPTS[qbox_{idx}_{i}];")
                         self.filter_graph.append(f"{last_node}[qbox_{idx}_{i}]overlay=enable=between(t\\,{start_t:.2f}\\,{end_t:.2f}):x={ox - padding}:y={oy - padding}[v_o_{idx}_{i}];")
                         last_node = f"[v_o_{idx}_{i}]"
-                    elif template in ["omr", "omr_hand"]:
+                    elif template in ["omr", "omr_hand", "omr_cursor"]:
                         # No box for OMR templates, just text on ruled paper
                         pass
                     elif template == "gameboy":
@@ -1080,7 +1083,7 @@ class TextQuizRenderer(BaseRenderer):
                                     hl_text = opt_display
 
                     # Highlight Box (if correct)
-                    if i == asset['correct_idx'] and template not in ["omr_hand", "gameboy"]:
+                    if i == asset['correct_idx'] and template not in ["omr_hand", "omr_cursor", "gameboy"]:
                         self.filter_graph.append(f"[{hl_box_idx}:v]setpts=PTS-STARTPTS[hlbox_{idx}];")
                         padding = 50 if template == "pastel" else 30
                         self.filter_graph.append(f"{last_node}[hlbox_{idx}]overlay=enable=between(t\\,{reveal_t:.2f}\\,{end_t:.2f}):x={ox - padding}:y={oy - padding}[v_h_{idx}];")
@@ -1103,21 +1106,29 @@ class TextQuizRenderer(BaseRenderer):
                              # No tick for simple OMR as requested
                              pass
 
-                # HAND ANIMATION (OMR_HAND ONLY) - Must be at end of question loop to be on top
-                if template == "omr_hand" and 'hand' in indices:
+                # HAND ANIMATION (OMR_HAND / OMR_CURSOR) - Must be at end of question loop to be on top
+                if template in ["omr_hand", "omr_cursor"] and 'hand' in indices:
                     hand_idx = indices['hand']
-                    h_w = 1000 # Doubled size
+                    h_w = 1000 if template == "omr_hand" else 150 # Cursor is smaller
                     hand_node = f"vhand{idx}"
-                    self.filter_graph.append(f"[{hand_idx}:v]colorkey=white:0.1,scale={h_w}:-1,setpts=PTS-STARTPTS[{hand_node}];")
+                    
+                    # Remove background from hand (white) or cursor (white)
+                    ckey = "white"
+                    self.filter_graph.append(f"[{hand_idx}:v]colorkey={ckey}:0.1,scale={h_w}:-1,setpts=PTS-STARTPTS[{hand_node}];")
+                    
+                    # Hand Tip Offset
+                    if template == "omr_cursor":
+                        # Anchor for hand_cursor is top-center (index finger)
+                        tip_off_x = -75 # Half of 150 scale
+                        tip_off_y = -10
+                    else:
+                        tip_off_x = -250
+                        tip_off_y = -450
                     
                     # 1. Pointing at Question (start_t -> start_t + q_dur)
                     q_text = asset['q_text']
                     words = q_text.split()
                     q_lines = wrap_text(q_text, width=22).split('\n')
-                    
-                    # Hand Tip Offset (Calibrated for the scale 1000)
-                    tip_off_x = -250
-                    tip_off_y = -450
                     
                     pointing_parts_x = []
                     pointing_parts_y = []
