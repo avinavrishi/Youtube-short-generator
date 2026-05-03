@@ -299,7 +299,13 @@ class TextQuizRenderer(BaseRenderer):
                 if os.path.exists(tick_path):
                     indices['tick'] = sum(1 for cmd in self.input_cmds if cmd == "-i")
                     self.input_cmds.extend(["-i", tick_path])
+            
+            if thumb_dur > 0:
+                indices['thumb'] = sum(1 for cmd in self.input_cmds if cmd == "-i")
+                self.input_cmds.extend(["-loop", "1", "-t", str(thumb_dur), "-i", thumbnail_path.replace('\\', '/')])
+            
             base_input_count = sum(1 for cmd in self.input_cmds if cmd == "-i")
+            input_paths = []
             
             # DRAWING LOGIC WITH EQUAL SPACING
             # Layout
@@ -1315,10 +1321,8 @@ class TextQuizRenderer(BaseRenderer):
             last_node = f"[vpb{video_id}]"
 
             # 0.5s Thumbnail Overlay (At the end)
-            if thumb_dur > 0:
-                thumb_idx = sum(1 for cmd in self.input_cmds if cmd == "-i")
-                self.input_cmds.extend(["-loop", "1", "-t", str(thumb_dur), "-i", thumbnail_path.replace('\\', '/')])
-                self.filter_graph.append(f"[{thumb_idx}:v]scale={VIDEO_WIDTH}:{VIDEO_HEIGHT}:force_original_aspect_ratio=increase,crop={VIDEO_WIDTH}:{VIDEO_HEIGHT}[thumb_s];")
+            if thumb_dur > 0 and 'thumb' in indices:
+                self.filter_graph.append(f"[{indices['thumb']}:v]scale={VIDEO_WIDTH}:{VIDEO_HEIGHT}:force_original_aspect_ratio=increase,crop={VIDEO_WIDTH}:{VIDEO_HEIGHT}[thumb_s];")
                 self.filter_graph.append(f"{last_node}[thumb_s]overlay=enable=between(t\\,{total_duration}\\,{total_duration + thumb_dur})[v_thumb_final];")
                 last_node = "[v_thumb_final]"
                 total_duration += thumb_dur
