@@ -136,9 +136,10 @@ class TextQuizRenderer(BaseRenderer):
         img.save(output_path)
         return output_path
 
-    def build_video(self, video_id, topic, questions, bg_type, music_dir, images_dir, videos_dir, fonts_dir, voiceovers_dir, output_dir, tts_voice, is_preview=False, template="classic"):
+    def build_video(self, video_id, topic, questions, bg_type, music_dir, images_dir, videos_dir, fonts_dir, voiceovers_dir, output_dir, tts_voice, is_preview=False, template="classic", thumbnail_path=None):
         try:
-            print(f"\n[Engine][V{video_id}] Building Text Quiz: {topic}")
+            thumb_dur = 0.5 if thumbnail_path and not is_preview else 0.0
+            print(f"\n[Engine][V{video_id}] Building Text Quiz: {topic} (End-Thumb: {thumbnail_path is not None})")
             qty = len(questions)
             heading_font = get_font_path("BebasNeue-Regular.ttf", fonts_dir)
             question_font = get_font_path("Poppins-Bold.ttf", fonts_dir)
@@ -191,7 +192,16 @@ class TextQuizRenderer(BaseRenderer):
                 "ncert students": "Are You Smarter Than an NCERT Student?",
                 "animal quiz": "Can You Guess The Animal? 99% Will Fail!",
                 "space": "Mind-Blowing Space Quiz: Are You A Genius?",
-                "science": "Only True Geniuses Can Pass This Science Quiz!"
+                "science": "Only True Geniuses Can Pass This Science Quiz!",
+                "invention": "Who Invented This? 99% of People Fail!",
+                "owner": "Who Owns These Brands? Most Get It Wrong!",
+                "english": "Is Your English Perfect? Take the Grammar Test!",
+                "spelling": "99% Can't Spell These 5 Hardest Words!",
+                "choose correct word": "Which Word Is Correct? Don't Get Tricked!",
+                "english idioms": "Can You Guess The Idiom? Challenge Your Brain!",
+                "synonym and antonym": "Synonym or Antonym? Test Your Vocabulary!",
+                "word meaning": "Do You Know The Real Meaning? Genius Level!",
+                "one word": "One Word Substitution! Are You a Word Master?",
             }
 
             topic_display = None
@@ -1304,6 +1314,15 @@ class TextQuizRenderer(BaseRenderer):
             self.filter_graph.append(f"[v_hbg2_{video_id}][pgfg{video_id}]overlay=x='-w+w*(t/{total_duration})':y={VIDEO_HEIGHT-15}[vpb{video_id}];")
             last_node = f"[vpb{video_id}]"
 
+            # 0.5s Thumbnail Overlay (At the end)
+            if thumb_dur > 0:
+                thumb_idx = sum(1 for cmd in self.input_cmds if cmd == "-i")
+                self.input_cmds.extend(["-loop", "1", "-t", str(thumb_dur), "-i", thumbnail_path.replace('\\', '/')])
+                self.filter_graph.append(f"[{thumb_idx}:v]scale={VIDEO_WIDTH}:{VIDEO_HEIGHT}:force_original_aspect_ratio=increase,crop={VIDEO_WIDTH}:{VIDEO_HEIGHT}[thumb_s];")
+                self.filter_graph.append(f"{last_node}[thumb_s]overlay=enable=between(t\\,{total_duration}\\,{total_duration + thumb_dur})[v_thumb_final];")
+                last_node = "[v_thumb_final]"
+                total_duration += thumb_dur
+
             # End Screen Bell
             if template in ["omr", "omr_hand"]:
                 bell_path = os.path.join(music_dir, "bell.mp3")
@@ -1328,10 +1347,10 @@ class TextQuizRenderer(BaseRenderer):
                 anchor_filter = f"aevalsrc=0:d={total_duration}[anchor{video_id}];"
                 
                 if has_bgm:
-                    # Dynamic volume: 0.05 during quiz, 0.25 during end screen
-                    bgm_vol = f"if(between(t\\,{score_start}\\,{score_end})\\,0.25\\,0.05)"
+                    # Dynamic volume: 0.05 during quiz, 0.25 during end screen, 0 during thumbnail
+                    bgm_vol = f"if(between(t\\,{total_duration-thumb_dur}\\,{total_duration})\\,0\\,if(between(t\\,{score_start}\\,{score_end})\\,0.25\\,0.05))"
                     # We add audio filters to a local list for final combination to keep filter_graph clean
-                    audio_filters = [f"[0:a]volume={bgm_vol}:eval=frame[bgm_v{video_id}]"]
+                    audio_filters = [f"[{bgm_idx}:a]volume={bgm_vol}:eval=frame[bgm_v{video_id}]"]
                     num_audio_inputs += 1
                     final_mixer = f"{anchor_filter} [anchor{video_id}][bgm_v{video_id}]{amix_tags}amix=inputs={num_audio_inputs}:duration=first:normalize=0[aout{video_id}]"
                 else:

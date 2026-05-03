@@ -70,6 +70,21 @@ def main():
     bg_type_choice = input("\nBG Type (1:Img, 2:Vid, 3:None): ")
     bg_type = {"1": "image", "2": "video", "3": "blue"}.get(bg_type_choice, "blue")
 
+    # Thumbnail Selection
+    thumb_path = None
+    thumb_dir = os.path.join(IMAGES_DIR, "thumbnail")
+    if os.path.exists(thumb_dir):
+        thumb_files = [f for f in os.listdir(thumb_dir) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+        if thumb_files:
+            print("\n--- Available Thumbnails ---")
+            print("0. No Thumbnail")
+            for i, f in enumerate(thumb_files, 1):
+                print(f"{i}. {f}")
+            
+            thumb_choice = input("Select Thumbnail (0-N): ").strip()
+            if thumb_choice.isdigit() and int(thumb_choice) > 0 and int(thumb_choice) <= len(thumb_files):
+                thumb_path = os.path.join(thumb_dir, thumb_files[int(thumb_choice)-1])
+
     print("\nSelect Visual Template:")
     print("1. Classic List (1 Column)")
     print("2. Modern Grid (2x2 Columns)")
@@ -142,7 +157,8 @@ def main():
             future = executor.submit(
                 renderer.build_video, 
                 v_i+1, topic_choice, sampled_df, bg_type, 
-                MUSIC_DIR, IMAGES_DIR, VIDEOS_DIR, FONTS_DIR, VOICEOVERS_DIR, OUTPUT_DIR, TTS_VOICE, is_preview=is_preview, template=template_name
+                MUSIC_DIR, IMAGES_DIR, VIDEOS_DIR, FONTS_DIR, VOICEOVERS_DIR, OUTPUT_DIR, TTS_VOICE, 
+                is_preview=is_preview, template=template_name, thumbnail_path=thumb_path
             )
             futures_to_indices[future] = sampled_indices
             topic_df = topic_df.drop(sampled_indices)
