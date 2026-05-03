@@ -18,7 +18,7 @@ VOICEOVERS_DIR = "voiceovers"
 OUTPUT_DIR = "output"
 DATA_DIR = "data"
 
-for d in [VOICEOVERS_DIR, OUTPUT_DIR, MUSIC_DIR, IMAGES_DIR, VIDEOS_DIR, FONTS_DIR, DATA_DIR, os.path.join(IMAGES_DIR, "thumbnail")]:
+for d in [VOICEOVERS_DIR, OUTPUT_DIR, MUSIC_DIR, IMAGES_DIR, VIDEOS_DIR, FONTS_DIR, DATA_DIR, os.path.join(IMAGES_DIR, "thumbnails")]:
     os.makedirs(d, exist_ok=True)
 
 def main():
@@ -72,7 +72,7 @@ def main():
 
     # Thumbnail Selection
     thumb_path = None
-    thumb_dir = os.path.join(IMAGES_DIR, "thumbnail")
+    thumb_dir = os.path.join(IMAGES_DIR, "thumbnails")
     if os.path.exists(thumb_dir):
         thumb_files = [f for f in os.listdir(thumb_dir) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
         if thumb_files:
@@ -85,7 +85,7 @@ def main():
             if thumb_choice.isdigit() and int(thumb_choice) > 0 and int(thumb_choice) <= len(thumb_files):
                 thumb_path = os.path.join(thumb_dir, thumb_files[int(thumb_choice)-1])
         else:
-            print("\n[Note] No thumbnails found in images/thumbnail/ directory.")
+            print("\n[Note] No thumbnails found in images/thumbnails/ directory.")
 
     print("\nSelect Visual Template:")
     print("1. Classic List (1 Column)")
