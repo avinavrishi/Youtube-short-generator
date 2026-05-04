@@ -179,43 +179,7 @@ class TextQuizRenderer(BaseRenderer):
                     question_font = sanitize_path(hw_font)
                     answer_font = sanitize_path(hw_font)
                     heading_font = sanitize_path(hw_font)
-            topic_clean = topic.strip()
-            high_ctr_titles = {
-                "ipl 2026": "The Ultimate IPL 2026 Quiz! Can You Score 100%?",
-                "icc champion trophy 2025": "ICC Champions Trophy 2025 Quiz! Are You Ready?",
-                "india vs pakistan": "India vs Pakistan! The Ultimate Rivalry Quiz!",
-                "virat kohli": "Only 1% of Fans Know These Virat Kohli Facts!",
-                "rohit sharma": "Are You The Biggest Hitman Rohit Sharma Fan?",
-                "90s kids": "Only True 90s Kids Will Pass This Nostalgia Quiz!",
-                "2000s kids": "Nostalgia Alert! Are You a True 2000s Kid?",
-                "indian quiz": "Can You Pass The Hardest Indian Trivia Quiz?",
-                "ncert students": "Are You Smarter Than an NCERT Student?",
-                "animal quiz": "Can You Guess The Animal? 99% Will Fail!",
-                "space": "Mind-Blowing Space Quiz: Are You A Genius?",
-                "science": "Only True Geniuses Can Pass This Science Quiz!",
-                "invention": "Who Invented This? 99% of People Fail!",
-                "owner": "Who Owns These Brands? Most Get It Wrong!",
-                "english": "Is Your English Perfect? Take the Grammar Test!",
-                "spelling": "99% Can't Spell These 5 Hardest Words!",
-                "choose correct word": "Which Word Is Correct? Don't Get Tricked!",
-                "english idioms": "Can You Guess The Idiom? Challenge Your Brain!",
-                "synonym and antonym": "Synonym or Antonym? Test Your Vocabulary!",
-                "word meaning": "Do You Know The Real Meaning? Genius Level!",
-                "one word": "One Word Substitution! Are You a Word Master?",
-            }
-
-            topic_display = None
-            for key, title in high_ctr_titles.items():
-                if key in topic_clean.lower():
-                    topic_display = title
-                    break
-            
-            if not topic_display:
-                hook_text = random.choice(self.hooks).format(Topic=topic_clean, Qty=qty)
-                if topic_clean.lower() not in hook_text.lower():
-                    topic_display = f"{topic_clean} Quiz\n{hook_text}"
-                else:
-                    topic_display = hook_text
+            topic_display = self.get_viral_title(topic, qty)
 
             intro_text = topic_display
             print(f"[V{video_id}] Hook/Intro: {intro_text}")

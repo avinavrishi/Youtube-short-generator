@@ -17,7 +17,7 @@ class ImageQuizRenderer(BaseRenderer):
             question_font = get_font_path("Poppins-Bold.ttf", fonts_dir)
             answer_font = get_font_path("Poppins-Regular.ttf", fonts_dir)
             
-            topic_display = random.choice(self.hooks).format(Topic=topic.strip(), Qty=qty)
+            topic_display = self.get_viral_title(topic, qty)
             intro_text = topic_display
             print(f"[V{video_id}] Hook/Intro: {intro_text}")
             

@@ -26,6 +26,16 @@ class BaseRenderer:
         
         # Viral Hooks
         self.hooks = [
+            "Only 1% of Americans Can Solve This 😳",
+            "Can You Pass This US IQ Test? 🧠",
+            "This Quiz Is Harder Than You Think 🔥",
+            "98% of Americans Are Failing This Challenge 😱",
+            "Try This If You Think You’re A True Patriot 🇺🇸",
+            "Most Americans Fail This 5th Grade History Test! 🧠",
+            "Are You Smarter Than The Average American? 😳",
+            "Only A Genius Can Get 10/10 On This US Quiz 🧠",
+            "This Impossible US Quiz Will Break Your Brain 🔥",
+            "Can You Name These 10 US Landmarks? 🧠",
             "Only 1% get all {Qty} right",
             "Don’t skip, last one is insane",
             "Score {Qty} out of {Qty} equals genius",
@@ -37,6 +47,45 @@ class BaseRenderer:
             "Genius test, pass or fail"
         ]
 
+        self.high_ctr_titles = {
+            "american history": "Americans are Failing this 5th Grade History Test! 😱",
+            "us presidents": "Can You Name These US Presidents? 99% Fail! 🇺🇸",
+            "us states": "Only 1% of Americans Can Pass This States Quiz 😳",
+            "us capitals": "Is Your IQ High Enough For This US Capitals Test? 🧠",
+            "usa mega": "This Impossible USA Mega Quiz Will Break Your Brain 🔥",
+            "iq / brain": "Can You Pass This 140 IQ Brain Test? 🧠",
+            "usa sports": "98% Of Fans Fail This US Sports Challenge 🏆",
+            "nba": "Only True NBA Fans Can Get 10/10 On This! 🏀",
+            "nfl": "Are You Smarter Than The Average NFL Fan? 🏈",
+            "us history": "Most Americans Fail This 5th Grade History Test! 🧠",
+            "us trivia": "Only 1% of Americans Can Solve This 😳",
+            "american": "Are You Smarter Than The Average American? 😳",
+            "usa": "Can You Pass This US IQ Test? 🧠",
+            "patriot": "Try This If You Think You’re A True Patriot 🇺🇸",
+            "landmarks": "Can You Name These 10 US Landmarks? 🧠",
+            "ipl 2026": "The Ultimate IPL 2026 Quiz! Can You Score 100%?",
+            "icc champion trophy 2025": "ICC Champions Trophy 2025 Quiz! Are You Ready?",
+            "india vs pakistan": "India vs Pakistan! The Ultimate Rivalry Quiz!",
+            "virat kohli": "Only 1% of Fans Know These Virat Kohli Facts!",
+            "rohit sharma": "Are You The Biggest Hitman Rohit Sharma Fan?",
+            "90s kids": "Only True 90s Kids Will Pass This Nostalgia Quiz!",
+            "2000s kids": "Nostalgia Alert! Are You a True 2000s Kid?",
+            "indian quiz": "Can You Pass The Hardest Indian Trivia Quiz?",
+            "ncert students": "Are You Smarter Than an NCERT Student?",
+            "animal quiz": "Can You Guess The Animal? 99% Will Fail!",
+            "space": "Mind-Blowing Space Quiz: Are You A Genius?",
+            "science": "Only True Geniuses Can Pass This Science Quiz!",
+            "invention": "Who Invented This? 99% of People Fail!",
+            "owner": "Who Owns These Brands? Most Get It Wrong!",
+            "english": "Is Your English Perfect? Take the Grammar Test!",
+            "spelling": "99% Can't Spell These 5 Hardest Words!",
+            "choose correct word": "Which Word Is Correct? Don't Get Tricked!",
+            "english idioms": "Can You Guess The Idiom? Challenge Your Brain!",
+            "synonym and antonym": "Synonym or Antonym? Test Your Vocabulary!",
+            "word meaning": "Do You Know The Real Meaning? Genius Level!",
+            "one word": "One Word Substitution! Are You a Word Master?",
+        }
+
         self.outro_variations = [
             "Comment your score now.",
             "Drop your score below.",
@@ -46,6 +95,15 @@ class BaseRenderer:
         ]
         
         self.channel_cta = "Subscribe to Quiz Raptor for more fun and tricky quizzes!"
+
+    def get_viral_title(self, topic, qty):
+        topic_clean = topic.strip().lower()
+        for key, title in self.high_ctr_titles.items():
+            if key in topic_clean:
+                return title.format(Topic=topic.strip(), Qty=qty)
+        
+        hook = random.choice(self.hooks)
+        return hook.format(Topic=topic.strip(), Qty=qty)
 
     def add_line_to_graph(self, last_node, text, font, color, size, x_start, y_start, wrap_w=32, enable="", align="center", fade=False, border_color="black", border_w=4, use_box=False, video_id=1):
         lines = wrap_text(text, width=wrap_w).split('\n')
