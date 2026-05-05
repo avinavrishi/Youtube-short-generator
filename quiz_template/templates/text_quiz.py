@@ -182,7 +182,7 @@ class TextQuizRenderer(BaseRenderer):
             topic_display = self.get_viral_title(topic, qty)
 
             intro_text = topic_display
-            self.script_lines = [f"--- VIDEO SCRIPT: {topic} ---", f"[INTRO]: {intro_text}"]
+            self.script_lines = [intro_text]
             print(f"[V{video_id}] Hook/Intro: {intro_text}")
             cta_text = "If you are still here\nhit like, subscribe and comment\nhow many answer were correct."
             
@@ -479,7 +479,17 @@ class TextQuizRenderer(BaseRenderer):
             q_assets = []
             temp_time = intro_dur
             for idx, q_data in enumerate(questions):
-                q_text, a_text, timer = q_data['Question'], str(q_data['Answer']), float(q_data['Time_to_Guess'])
+                # Robust parsing for Question Data
+                q_text = str(q_data.get('Question', 'Unknown Question'))
+                a_text = str(q_data.get('Answer', 'Unknown Answer'))
+                
+                try:
+                    timer_val = q_data.get('Time_to_Guess', 5)
+                    timer = float(timer_val)
+                except (ValueError, TypeError):
+                    print(f"  [Warning] Invalid timer '{timer_val}' for question: {q_text[:30]}... Using 5s default.")
+                    timer = 5.0
+
                 opt_a, opt_b = str(q_data.get('Option_A', '')), str(q_data.get('Option_B', ''))
                 opt_c, opt_d = str(q_data.get('Option_C', '')), str(q_data.get('Option_D', ''))
                 options = [opt_a, opt_b, opt_c, opt_d]
@@ -499,8 +509,8 @@ class TextQuizRenderer(BaseRenderer):
 
                 q_audio_path = os.path.join(voiceovers_dir, f"q_{get_hash(q_text)}.mp3")
                 a_audio_path = os.path.join(voiceovers_dir, f"a_{get_hash(a_text)}.mp3")
-                self.script_lines.append(f"[Q{idx+1}]: {q_text}")
-                self.script_lines.append(f"[A{idx+1}]: {a_text}")
+                self.script_lines.append(q_text)
+                self.script_lines.append(a_text)
                 asyncio.run(generate_voiceover(q_text, q_audio_path, tts_voice))
                 asyncio.run(generate_voiceover(a_text, a_audio_path, tts_voice))
                 
@@ -520,7 +530,7 @@ class TextQuizRenderer(BaseRenderer):
             # Outro Voiceover
             outro_hook = random.choice(self.outro_variations).format(Qty=qty)
             outro_text = f"{outro_hook} {self.channel_cta}"
-            self.script_lines.append(f"[OUTRO]: {outro_text}")
+            self.script_lines.append(outro_text)
             outro_audio_path = os.path.join(voiceovers_dir, f"outro_{get_hash(outro_text)}.mp3")
             asyncio.run(generate_voiceover(outro_text, outro_audio_path, tts_voice))
             outro_dur = get_duration(outro_audio_path)
