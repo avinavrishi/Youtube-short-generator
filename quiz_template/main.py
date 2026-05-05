@@ -106,40 +106,38 @@ def main():
     print("16. OMR / Exam Sheet (With Hand Animation)")
     print("17. OMR / Exam Sheet (With Cursor Animation)")
     template_choice = input("Choice (1-17): ").strip()
-    if template_choice == "1":
-        template_name = "classic"
-    elif template_choice == "3":
-        template_name = "millionaire"
-    elif template_choice == "4":
-        template_name = "chalkboard"
-    elif template_choice == "5":
-        template_name = "hacker"
-    elif template_choice == "6":
-        template_name = "pastel"
-    elif template_choice == "7":
-        template_name = "chat"
-    elif template_choice == "8":
-        template_name = "retro"
-    elif template_choice == "9":
-        template_name = "quadrants"
-    elif template_choice == "10":
-        template_name = "hazard"
-    elif template_choice == "11":
-        template_name = "stadium"
-    elif template_choice == "12":
-        template_name = "gameboy"
-    elif template_choice == "13":
-        template_name = "blueprint"
-    elif template_choice == "14":
-        template_name = "wildlife"
-    elif template_choice == "15":
-        template_name = "omr"
-    elif template_choice == "16":
-        template_name = "omr_hand"
-    elif template_choice == "17":
-        template_name = "omr_cursor"
-    else:
-        template_name = "grid"
+    template_map = {
+        "1": "classic", "2": "grid", "3": "millionaire", "4": "chalkboard", "5": "hacker",
+        "6": "pastel", "7": "chat", "8": "retro", "9": "quadrants", "10": "hazard",
+        "11": "stadium", "12": "gameboy", "13": "blueprint", "14": "wildlife",
+        "15": "omr", "16": "omr_hand", "17": "omr_cursor"
+    }
+    template_name = template_map.get(template_choice, "grid")
+
+    # Intro Animation Selection
+    selected_char = None
+    selected_load = None
+    
+    char_files = [f for f in os.listdir(ASSETS_DIR) if f.lower().startswith("intro_char")]
+    load_files = [f for f in os.listdir(ASSETS_DIR) if f.lower().startswith("intro_loading")]
+    
+    if char_files:
+        print("\n--- Select Intro Character ---")
+        print("0. Random / Each video different")
+        for i, f in enumerate(char_files, 1):
+            print(f"{i}. {f}")
+        c_choice = input("Choice (0-N): ").strip()
+        if c_choice.isdigit() and 0 < int(c_choice) <= len(char_files):
+            selected_char = char_files[int(c_choice)-1]
+            
+    if load_files:
+        print("\n--- Select Loading Animation ---")
+        print("0. Random / Each video different")
+        for i, f in enumerate(load_files, 1):
+            print(f"{i}. {f}")
+        l_choice = input("Choice (0-N): ").strip()
+        if l_choice.isdigit() and 0 < int(l_choice) <= len(load_files):
+            selected_load = load_files[int(l_choice)-1]
 
     render_mode = input("Render Mode (1: Full Video, 2: Preview Frame): ").strip()
     is_preview = (render_mode == "2")
@@ -163,7 +161,8 @@ def main():
                 renderer.build_video, 
                 v_i+1, topic_choice, sampled_df, bg_type, 
                 MUSIC_DIR, IMAGES_DIR, VIDEOS_DIR, FONTS_DIR, VOICEOVERS_DIR, OUTPUT_DIR, TTS_VOICE, 
-                is_preview=is_preview, template=template_name, thumbnail_path=thumb_path
+                is_preview=is_preview, template=template_name, thumbnail_path=thumb_path,
+                selected_char=selected_char, selected_load=selected_load
             )
             futures_to_indices[future] = sampled_indices
             topic_df = topic_df.drop(sampled_indices)

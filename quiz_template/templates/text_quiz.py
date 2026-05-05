@@ -136,7 +136,7 @@ class TextQuizRenderer(BaseRenderer):
         img.save(output_path)
         return output_path
 
-    def build_video(self, video_id, topic, questions, bg_type, music_dir, images_dir, videos_dir, fonts_dir, voiceovers_dir, output_dir, tts_voice, is_preview=False, template="classic", thumbnail_path=None):
+    def build_video(self, video_id, topic, questions, bg_type, music_dir, images_dir, videos_dir, fonts_dir, voiceovers_dir, output_dir, tts_voice, is_preview=False, template="classic", thumbnail_path=None, selected_char=None, selected_load=None):
         try:
             thumb_dur = 0.5 if thumbnail_path and not is_preview else 0.0
             print(f"\n[Engine][V{video_id}] Building Text Quiz: {topic} (End-Thumb: {thumbnail_path is not None})")
@@ -248,7 +248,7 @@ class TextQuizRenderer(BaseRenderer):
                     self.input_cmds.extend(["-stream_loop", "-1", "-i", bg_file.replace('\\', '/')])
 
             offset_before_common = sum(1 for cmd in self.input_cmds if cmd == "-i")
-            indices = self.build_common_assets(video_id, offset_before_common)
+            indices = self.build_common_assets(video_id, offset_before_common, selected_char, selected_load)
             if template == "gameboy":
                 gb_path = os.path.join(self.assets_dir, "gameboy_controls.png")
                 if os.path.exists(gb_path):

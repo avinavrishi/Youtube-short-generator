@@ -142,7 +142,7 @@ class BaseRenderer:
             
         return current_node
 
-    def build_common_assets(self, video_id, audio_offset):
+    def build_common_assets(self, video_id, audio_offset, selected_char=None, selected_load=None):
         # Premium Assets
         assets = ["loader_frame.png", "loader_fill.png", "loader_star.png", "logo.png", "btn_sub.png", "btn_subbed.png", "cursor.png"]
         indices = {}
@@ -151,21 +151,29 @@ class BaseRenderer:
             self.input_cmds.extend(["-loop", "1", "-i", path.replace('\\', '/')])
             indices[asset.split('.')[0]] = audio_offset + i
         
-        # New: Intro Animations (Randomized if multiple exist)
+        # New: Intro Animations
         curr_idx = audio_offset + len(assets)
         
         # 1. Intro Character
-        char_files = glob.glob(os.path.join(self.assets_dir, "intro_char*.*"))
-        if char_files:
-            char_path = random.choice(char_files)
+        if selected_char:
+            char_path = os.path.join(self.assets_dir, selected_char)
+        else:
+            char_files = glob.glob(os.path.join(self.assets_dir, "intro_char*.*"))
+            char_path = random.choice(char_files) if char_files else None
+            
+        if char_path and os.path.exists(char_path):
             self.input_cmds.extend(["-stream_loop", "-1", "-i", char_path.replace('\\', '/')])
             indices['intro_char'] = curr_idx
             curr_idx += 1
             
         # 2. Intro Loading Banner
-        load_files = glob.glob(os.path.join(self.assets_dir, "intro_loading*.*"))
-        if load_files:
-            load_path = random.choice(load_files)
+        if selected_load:
+            load_path = os.path.join(self.assets_dir, selected_load)
+        else:
+            load_files = glob.glob(os.path.join(self.assets_dir, "intro_loading*.*"))
+            load_path = random.choice(load_files) if load_files else None
+
+        if load_path and os.path.exists(load_path):
             self.input_cmds.extend(["-stream_loop", "-1", "-i", load_path.replace('\\', '/')])
             indices['intro_loading'] = curr_idx
             curr_idx += 1
