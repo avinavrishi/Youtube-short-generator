@@ -166,6 +166,17 @@ class ImageQuizRenderer(BaseRenderer):
             start_y = (header_h - total_text_h) // 2
             last_node = self.add_line_to_graph(last_node, topic_display, heading_font, "red", h_size, 0, start_y, wrap_w=28, align="center", video_id=video_id)
             
+            # Intro Animations (Character & Loading)
+            if 'intro_char' in indices:
+                self.filter_graph.append(f"[{indices['intro_char']}:v]scale=800:-1[vchar{video_id}];")
+                self.filter_graph.append(f"{last_node}[vchar{video_id}]overlay=enable=between(t\\,0\\,{intro_dur:.2f}):x=(W-w)/2:y=(H-h)/2[vci{video_id}];")
+                last_node = f"[vci{video_id}]"
+            
+            if 'intro_loading' in indices:
+                self.filter_graph.append(f"[{indices['intro_loading']}:v]scale={VIDEO_WIDTH}:-1[vload{video_id}];")
+                self.filter_graph.append(f"{last_node}[vload{video_id}]overlay=enable=between(t\\,0\\,{intro_dur:.2f}):x=0:y=H-h-180[vli{video_id}];")
+                last_node = f"[vli{video_id}]"
+            
             # Answer Box Gen
             box_w = 1000
             box_h = (rows * 90) + 40

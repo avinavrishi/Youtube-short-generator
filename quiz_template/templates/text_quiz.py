@@ -650,6 +650,18 @@ class TextQuizRenderer(BaseRenderer):
                 h_color = "white" if template == "chalkboard" else ("0x00FF00" if template == "hacker" else ("#333333" if template == "pastel" else "red"))
                 last_node = self.add_line_to_graph(last_node, topic_display, heading_font, h_color, h_size, 0, start_y, wrap_w=h_wrap_w, align="center", video_id=video_id)
             
+            # Intro Animations (Character & Loading)
+            if 'intro_char' in indices:
+                char_scale = 800 if template != "gameboy" else 600
+                self.filter_graph.append(f"[{indices['intro_char']}:v]scale={char_scale}:-1[vchar{video_id}];")
+                self.filter_graph.append(f"{last_node}[vchar{video_id}]overlay=enable=between(t\\,0\\,{intro_dur:.2f}):x=(W-w)/2:y=(H-h)/2[vci{video_id}];")
+                last_node = f"[vci{video_id}]"
+            
+            if 'intro_loading' in indices:
+                self.filter_graph.append(f"[{indices['intro_loading']}:v]scale={VIDEO_WIDTH}:-1[vload{video_id}];")
+                self.filter_graph.append(f"{last_node}[vload{video_id}]overlay=enable=between(t\\,0\\,{intro_dur:.2f}):x=0:y=H-h-180[vli{video_id}];")
+                last_node = f"[vli{video_id}]"
+            
             # Option Box Gen
             opt_box_w = opt_w
             opt_box_h = opt_h

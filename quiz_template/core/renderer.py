@@ -143,15 +143,33 @@ class BaseRenderer:
         return current_node
 
     def build_common_assets(self, video_id, audio_offset):
-        # Premium Loader Assets
+        # Premium Assets
         assets = ["loader_frame.png", "loader_fill.png", "loader_star.png", "logo.png", "btn_sub.png", "btn_subbed.png", "cursor.png"]
         indices = {}
         for i, asset in enumerate(assets):
             path = os.path.abspath(os.path.join(self.assets_dir, asset))
-            # Use raw path for -i, but sanitize_path for filters if needed.
-            # Here we just need it for the input command.
             self.input_cmds.extend(["-loop", "1", "-i", path.replace('\\', '/')])
             indices[asset.split('.')[0]] = audio_offset + i
+        
+        # New: Intro Animations (Randomized if multiple exist)
+        curr_idx = audio_offset + len(assets)
+        
+        # 1. Intro Character
+        char_files = glob.glob(os.path.join(self.assets_dir, "intro_char*.*"))
+        if char_files:
+            char_path = random.choice(char_files)
+            self.input_cmds.extend(["-stream_loop", "-1", "-i", char_path.replace('\\', '/')])
+            indices['intro_char'] = curr_idx
+            curr_idx += 1
+            
+        # 2. Intro Loading Banner
+        load_files = glob.glob(os.path.join(self.assets_dir, "intro_loading*.*"))
+        if load_files:
+            load_path = random.choice(load_files)
+            self.input_cmds.extend(["-stream_loop", "-1", "-i", load_path.replace('\\', '/')])
+            indices['intro_loading'] = curr_idx
+            curr_idx += 1
+            
         return indices
 
     def render_final(self, cmd, filter_script_path, out_path, total_duration, last_video_node, video_id):
