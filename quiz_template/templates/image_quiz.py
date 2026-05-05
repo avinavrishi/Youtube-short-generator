@@ -19,6 +19,7 @@ class ImageQuizRenderer(BaseRenderer):
             
             topic_display = self.get_viral_title(topic, qty)
             intro_text = topic_display
+            self.script_lines = [f"--- VIDEO SCRIPT: {topic} ---", f"[INTRO]: {intro_text}"]
             print(f"[V{video_id}] Hook/Intro: {intro_text}")
             
             # Background & Basic Assets
@@ -82,6 +83,8 @@ class ImageQuizRenderer(BaseRenderer):
                 
                 q_audio_path = os.path.join(voiceovers_dir, f"q_{get_hash(q_text)}.mp3")
                 a_audio_path = os.path.join(voiceovers_dir, f"a_{get_hash(a_text)}.mp3")
+                self.script_lines.append(f"[Q{idx+1}]: {q_text}")
+                self.script_lines.append(f"[A{idx+1}]: {a_text}")
                 asyncio.run(generate_voiceover(q_text, q_audio_path, tts_voice))
                 asyncio.run(generate_voiceover(a_text, a_audio_path, tts_voice))
                 
@@ -102,6 +105,7 @@ class ImageQuizRenderer(BaseRenderer):
             # Outro Voiceover
             outro_hook = random.choice(self.outro_variations).format(Qty=len(questions))
             outro_text = f"{outro_hook} {self.channel_cta}"
+            self.script_lines.append(f"[OUTRO]: {outro_text}")
             outro_audio_path = os.path.join(voiceovers_dir, f"outro_{get_hash(outro_text)}.mp3")
             asyncio.run(generate_voiceover(outro_text, outro_audio_path, tts_voice))
             outro_dur = get_duration(outro_audio_path)
@@ -318,18 +322,26 @@ class ImageQuizRenderer(BaseRenderer):
             filter_script_path = os.path.join(output_dir, f"v{video_id}_filter.txt")
             with open(filter_script_path, "w", encoding="utf-8") as f: f.write(full_filter)
             
+            # Final Output Folder Logic
+            safe_topic = "".join([c if c.isalnum() else "_" for c in topic])
+            video_folder = os.path.join(output_dir, f"Video_{video_id}_{safe_topic}")
+            os.makedirs(video_folder, exist_ok=True)
+            
             if is_preview:
                 preview_target_time = q_assets[0]['reveal_t'] + 0.5 if q_assets else 2.0
-                out_path = os.path.join(output_dir, f"Preview_{topic}_{video_id}_{datetime.datetime.now().strftime('%M%S')}.png")
+                out_path = os.path.join(video_folder, f"Preview_{video_id}.png")
                 cmd = [imageio_ffmpeg.get_ffmpeg_exe(), "-y"] + self.input_cmds
                 for p in input_paths: cmd.extend(["-i", p.replace('\\', '/')])
                 return self.render_preview(cmd, filter_script_path, out_path, preview_target_time, last_node, video_id)
             
-            out_path = os.path.join(output_dir, f"ImageQuiz_{topic}_{video_id}_{datetime.datetime.now().strftime('%M%S')}.mp4")
+            out_path = os.path.join(video_folder, f"ImageQuiz_{video_id}.mp4")
             cmd = [imageio_ffmpeg.get_ffmpeg_exe(), "-y"] + self.input_cmds
             for p in input_paths: cmd.extend(["-i", p.replace('\\', '/')])
             
-            return self.render_final(cmd, filter_script_path, out_path, total_duration, last_node, video_id)
+            success = self.render_final(cmd, filter_script_path, out_path, total_duration, last_node, video_id)
+            if success:
+                self.save_script(video_folder)
+            return success
 
         except Exception as e:
             print(f"Error in ImageQuiz building: {e}")

@@ -24,6 +24,9 @@ class BaseRenderer:
         self.footer_h = 100
         self.side_margin = 120
         
+        # Script Export
+        self.script_lines = []
+        
         # Viral Hooks
         self.hooks = [
             "Only 1% of Americans Can Solve This 😳",
@@ -218,3 +221,13 @@ class BaseRenderer:
             print(f"[V{video_id}] Preview frame successfully saved to {out_path}")
             
         return process.returncode == 0
+
+    def save_script(self, folder_path):
+        """Saves the collected script lines to a text file."""
+        script_file = os.path.join(folder_path, "voiceover_script.txt")
+        try:
+            with open(script_file, "w", encoding="utf-8") as f:
+                f.write("\n".join(self.script_lines))
+            print(f"[Script] Saved voiceover script to {script_file}")
+        except Exception as e:
+            print(f"[Script] Error saving script: {e}")
