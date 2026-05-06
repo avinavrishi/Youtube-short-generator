@@ -654,12 +654,15 @@ class TextQuizRenderer(BaseRenderer):
             if 'intro_char' in indices:
                 char_scale = 800 if template != "gameboy" else 600
                 self.filter_graph.append(f"[{indices['intro_char']}:v]scale={char_scale}:-1[vchar{video_id}];")
-                self.filter_graph.append(f"{last_node}[vchar{video_id}]overlay=enable=between(t\\,0\\,{intro_dur:.2f}):x=(W-w)/2:y=(H-h)/2[vci{video_id}];")
+                # Positioned right after heading
+                self.filter_graph.append(f"{last_node}[vchar{video_id}]overlay=enable=between(t\\,0\\,{intro_dur:.2f}):x=(W-w)/2:y=380[vci{video_id}];")
                 last_node = f"[vci{video_id}]"
             
             if 'intro_loading' in indices:
-                self.filter_graph.append(f"[{indices['intro_loading']}:v]scale={VIDEO_WIDTH}:-1[vload{video_id}];")
-                self.filter_graph.append(f"{last_node}[vload{video_id}]overlay=enable=between(t\\,0\\,{intro_dur:.2f}):x=0:y=H-h-180[vli{video_id}];")
+                # Reduced size (80% width) and placed below character
+                load_w = int(VIDEO_WIDTH * 0.8)
+                self.filter_graph.append(f"[{indices['intro_loading']}:v]scale={load_w}:-1[vload{video_id}];")
+                self.filter_graph.append(f"{last_node}[vload{video_id}]overlay=enable=between(t\\,0\\,{intro_dur:.2f}):x=(W-w)/2:y=1050[vli{video_id}];")
                 last_node = f"[vli{video_id}]"
             
             # Option Box Gen

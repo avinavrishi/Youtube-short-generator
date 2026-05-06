@@ -155,7 +155,10 @@ class BaseRenderer:
         curr_idx = audio_offset + len(assets)
         
         # 1. Intro Character
-        if selected_char:
+        char_path = None
+        if selected_char == "NONE":
+            pass # Skip
+        elif selected_char:
             char_path = os.path.join(self.assets_dir, selected_char)
         else:
             char_files = glob.glob(os.path.join(self.assets_dir, "intro_char*.*"))
@@ -167,7 +170,10 @@ class BaseRenderer:
             curr_idx += 1
             
         # 2. Intro Loading Banner
-        if selected_load:
+        load_path = None
+        if selected_load == "NONE":
+            pass # Skip
+        elif selected_load:
             load_path = os.path.join(self.assets_dir, selected_load)
         else:
             load_files = glob.glob(os.path.join(self.assets_dir, "intro_loading*.*"))
