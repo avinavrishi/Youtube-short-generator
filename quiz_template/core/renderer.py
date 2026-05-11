@@ -87,6 +87,8 @@ class BaseRenderer:
             "synonym and antonym": "Synonym or Antonym? Test Your Vocabulary!",
             "word meaning": "Do You Know The Real Meaning? Genius Level!",
             "one word": "One Word Substitution! Are You a Word Master?",
+            "bible": "Only 1% of True Believers can pass this Bible Quiz! ✝️",
+            "jesus": "How well do you REALLY know Jesus? Test your Faith! 🙏",
         }
 
         self.outro_variations = [
