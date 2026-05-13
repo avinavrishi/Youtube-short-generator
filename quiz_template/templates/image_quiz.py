@@ -9,7 +9,7 @@ from core.renderer import BaseRenderer, VIDEO_WIDTH, VIDEO_HEIGHT
 import imageio_ffmpeg
 
 class ImageQuizRenderer(BaseRenderer):
-    def build_video(self, video_id, topic, questions, bg_type, music_dir, images_dir, videos_dir, fonts_dir, voiceovers_dir, output_dir, tts_voice, is_preview=False, template="classic", selected_char=None, generate_script=True):
+    def build_video(self, video_id, topic, questions, bg_type, music_dir, images_dir, videos_dir, fonts_dir, voiceovers_dir, output_dir, tts_voice, is_preview=False, template="classic", selected_char=None):
         try:
             print(f"\n[Engine][V{video_id}] Building Image Quiz: {topic}")
             qty = len(questions)
@@ -340,26 +340,23 @@ class ImageQuizRenderer(BaseRenderer):
             
             # Final Output Folder Logic
             safe_topic = "".join([c if c.isalnum() else "_" for c in topic])
-            if generate_script:
-                out_dir_final = os.path.join(output_dir, f"Video_{video_id}_{safe_topic}")
-                os.makedirs(out_dir_final, exist_ok=True)
-            else:
-                out_dir_final = output_dir
+            video_folder = os.path.join(output_dir, f"Video_{video_id}_{safe_topic}")
+            os.makedirs(video_folder, exist_ok=True)
             
             if is_preview:
                 preview_target_time = q_assets[0]['reveal_t'] + 0.5 if q_assets else 2.0
-                out_path = os.path.join(out_dir_final, f"Preview_{video_id}.png")
+                out_path = os.path.join(video_folder, f"Preview_{video_id}.png")
                 cmd = [imageio_ffmpeg.get_ffmpeg_exe(), "-y"] + self.input_cmds
                 for p in input_paths: cmd.extend(["-i", p.replace('\\', '/')])
                 return self.render_preview(cmd, filter_script_path, out_path, preview_target_time, last_node, video_id)
             
-            out_path = os.path.join(out_dir_final, f"ImageQuiz_{video_id}.mp4")
+            out_path = os.path.join(video_folder, f"ImageQuiz_{video_id}.mp4")
             cmd = [imageio_ffmpeg.get_ffmpeg_exe(), "-y"] + self.input_cmds
             for p in input_paths: cmd.extend(["-i", p.replace('\\', '/')])
             
             success = self.render_final(cmd, filter_script_path, out_path, total_duration, last_node, video_id)
-            if success and generate_script:
-                self.save_script(out_dir_final)
+            if success:
+                self.save_script(video_folder)
             return success
 
         except Exception as e:
