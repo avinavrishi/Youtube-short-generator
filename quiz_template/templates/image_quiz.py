@@ -9,7 +9,7 @@ from core.renderer import BaseRenderer, VIDEO_WIDTH, VIDEO_HEIGHT
 import imageio_ffmpeg
 
 class ImageQuizRenderer(BaseRenderer):
-    def build_video(self, video_id, topic, questions, bg_type, music_dir, images_dir, videos_dir, fonts_dir, voiceovers_dir, output_dir, tts_voice, is_preview=False, template="classic", selected_char=None):
+    def build_video(self, video_id, topic, questions, bg_type, music_dir, images_dir, videos_dir, fonts_dir, voiceovers_dir, output_dir, tts_voice, is_preview=False, template="classic", selected_char=None, generate_script=True):
         try:
             print(f"\n[Engine][V{video_id}] Building Image Quiz: {topic}")
             qty = len(questions)
