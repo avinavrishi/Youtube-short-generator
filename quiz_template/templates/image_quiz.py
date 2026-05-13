@@ -9,7 +9,7 @@ from core.renderer import BaseRenderer, VIDEO_WIDTH, VIDEO_HEIGHT
 import imageio_ffmpeg
 
 class ImageQuizRenderer(BaseRenderer):
-    def build_video(self, video_id, topic, questions, bg_type, music_dir, images_dir, videos_dir, fonts_dir, voiceovers_dir, output_dir, tts_voice, is_preview=False, template="classic", selected_char=None, selected_load=None):
+    def build_video(self, video_id, topic, questions, bg_type, music_dir, images_dir, videos_dir, fonts_dir, voiceovers_dir, output_dir, tts_voice, is_preview=False, template="classic", selected_char=None):
         try:
             print(f"\n[Engine][V{video_id}] Building Image Quiz: {topic}")
             qty = len(questions)
@@ -37,7 +37,7 @@ class ImageQuizRenderer(BaseRenderer):
                     bg_input_idx = 1 if has_bgm else 0
             
             audio_offset = (1 if has_bgm else 0) + (1 if bg_input_idx != -1 else 0)
-            indices = self.build_common_assets(video_id, audio_offset, selected_char, selected_load)
+            indices = self.build_common_assets(video_id, audio_offset, selected_char)
             
             intro_audio_path = os.path.join(voiceovers_dir, f"intro_{get_hash(intro_text)}.mp3")
             asyncio.run(generate_voiceover(intro_text, intro_audio_path, tts_voice))
@@ -166,19 +166,12 @@ class ImageQuizRenderer(BaseRenderer):
             start_y = (header_h - total_text_h) // 2
             last_node = self.add_line_to_graph(last_node, topic_display, heading_font, "red", h_size, 0, start_y, wrap_w=28, align="center", video_id=video_id)
             
-            # Intro Animations (Character & Loading)
+            # Intro Animation (Character)
             if 'intro_char' in indices:
-                self.filter_graph.append(f"[{indices['intro_char']}:v]scale=800:-1[vchar{video_id}];")
-                # Positioned right after heading
-                self.filter_graph.append(f"{last_node}[vchar{video_id}]overlay=enable=between(t\\,0\\,{intro_dur:.2f}):x=(W-w)/2:y=380[vci{video_id}];")
+                char_h = VIDEO_HEIGHT - header_h
+                self.filter_graph.append(f"[{indices['intro_char']}:v]scale={VIDEO_WIDTH}:{char_h}:force_original_aspect_ratio=increase,crop={VIDEO_WIDTH}:{char_h}[vchar{video_id}];")
+                self.filter_graph.append(f"{last_node}[vchar{video_id}]overlay=enable=between(t\\,0\\,{intro_dur:.2f}):x=0:y={header_h}[vci{video_id}];")
                 last_node = f"[vci{video_id}]"
-            
-            if 'intro_loading' in indices:
-                # Reduced size (80% width) and placed below character
-                load_w = int(VIDEO_WIDTH * 0.8)
-                self.filter_graph.append(f"[{indices['intro_loading']}:v]scale={load_w}:-1[vload{video_id}];")
-                self.filter_graph.append(f"{last_node}[vload{video_id}]overlay=enable=between(t\\,0\\,{intro_dur:.2f}):x=(W-w)/2:y=1050[vli{video_id}];")
-                last_node = f"[vli{video_id}]"
             
             # Answer Box Gen
             box_w = 1000

@@ -144,7 +144,7 @@ class BaseRenderer:
             
         return current_node
 
-    def build_common_assets(self, video_id, audio_offset, selected_char=None, selected_load=None):
+    def build_common_assets(self, video_id, audio_offset, selected_char=None):
         # Premium Assets
         assets = ["loader_frame.png", "loader_fill.png", "loader_star.png", "logo.png", "btn_sub.png", "btn_subbed.png", "cursor.png"]
         indices = {}
@@ -169,21 +169,6 @@ class BaseRenderer:
         if char_path and os.path.exists(char_path):
             self.input_cmds.extend(["-stream_loop", "-1", "-i", char_path.replace('\\', '/')])
             indices['intro_char'] = curr_idx
-            curr_idx += 1
-            
-        # 2. Intro Loading Banner
-        load_path = None
-        if selected_load == "NONE":
-            pass # Skip
-        elif selected_load:
-            load_path = os.path.join(self.assets_dir, selected_load)
-        else:
-            load_files = glob.glob(os.path.join(self.assets_dir, "intro_loading*.*"))
-            load_path = random.choice(load_files) if load_files else None
-
-        if load_path and os.path.exists(load_path):
-            self.input_cmds.extend(["-stream_loop", "-1", "-i", load_path.replace('\\', '/')])
-            indices['intro_loading'] = curr_idx
             curr_idx += 1
             
         return indices

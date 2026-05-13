@@ -136,7 +136,7 @@ class TextQuizRenderer(BaseRenderer):
         img.save(output_path)
         return output_path
 
-    def build_video(self, video_id, topic, questions, bg_type, music_dir, images_dir, videos_dir, fonts_dir, voiceovers_dir, output_dir, tts_voice, is_preview=False, template="classic", thumbnail_path=None, selected_char=None, selected_load=None):
+    def build_video(self, video_id, topic, questions, bg_type, music_dir, images_dir, videos_dir, fonts_dir, voiceovers_dir, output_dir, tts_voice, is_preview=False, template="classic", thumbnail_path=None, selected_char=None):
         try:
             thumb_dur = 0.5 if thumbnail_path and not is_preview else 0.0
             print(f"\n[Engine][V{video_id}] Building Text Quiz: {topic} (End-Thumb: {thumbnail_path is not None})")
@@ -248,7 +248,7 @@ class TextQuizRenderer(BaseRenderer):
                     self.input_cmds.extend(["-stream_loop", "-1", "-i", bg_file.replace('\\', '/')])
 
             offset_before_common = sum(1 for cmd in self.input_cmds if cmd == "-i")
-            indices = self.build_common_assets(video_id, offset_before_common, selected_char, selected_load)
+            indices = self.build_common_assets(video_id, offset_before_common, selected_char)
             if template == "gameboy":
                 gb_path = os.path.join(self.assets_dir, "gameboy_controls.png")
                 if os.path.exists(gb_path):
@@ -650,20 +650,12 @@ class TextQuizRenderer(BaseRenderer):
                 h_color = "white" if template == "chalkboard" else ("0x00FF00" if template == "hacker" else ("#333333" if template == "pastel" else "red"))
                 last_node = self.add_line_to_graph(last_node, topic_display, heading_font, h_color, h_size, 0, start_y, wrap_w=h_wrap_w, align="center", video_id=video_id)
             
-            # Intro Animations (Character & Loading)
+            # Intro Animation (Character)
             if 'intro_char' in indices:
-                char_scale = 800 if template != "gameboy" else 600
-                self.filter_graph.append(f"[{indices['intro_char']}:v]scale={char_scale}:-1[vchar{video_id}];")
-                # Positioned right after heading
-                self.filter_graph.append(f"{last_node}[vchar{video_id}]overlay=enable=between(t\\,0\\,{intro_dur:.2f}):x=(W-w)/2:y=380[vci{video_id}];")
+                char_h = VIDEO_HEIGHT - header_h
+                self.filter_graph.append(f"[{indices['intro_char']}:v]scale={VIDEO_WIDTH}:{char_h}:force_original_aspect_ratio=increase,crop={VIDEO_WIDTH}:{char_h}[vchar{video_id}];")
+                self.filter_graph.append(f"{last_node}[vchar{video_id}]overlay=enable=between(t\\,0\\,{intro_dur:.2f}):x=0:y={header_h}[vci{video_id}];")
                 last_node = f"[vci{video_id}]"
-            
-            if 'intro_loading' in indices:
-                # Reduced size (80% width) and placed below character
-                load_w = int(VIDEO_WIDTH * 0.8)
-                self.filter_graph.append(f"[{indices['intro_loading']}:v]scale={load_w}:-1[vload{video_id}];")
-                self.filter_graph.append(f"{last_node}[vload{video_id}]overlay=enable=between(t\\,0\\,{intro_dur:.2f}):x=(W-w)/2:y=1050[vli{video_id}];")
-                last_node = f"[vli{video_id}]"
             
             # Option Box Gen
             opt_box_w = opt_w
