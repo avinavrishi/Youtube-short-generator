@@ -130,8 +130,10 @@ def main():
             selected_char = "NONE"
         elif c_choice.isdigit() and 0 < int(c_choice) <= len(char_files):
             selected_char = char_files[int(c_choice)-1]
+    gen_script_choice = input("\nGenerate Voiceover Script & Folders? (Y/N, default Y): ").strip().lower()
+    generate_script = False if gen_script_choice == 'n' else True
 
-    render_mode = input("Render Mode (1: Full Video, 2: Preview Frame): ").strip()
+    render_mode = input("\nRender Mode (1: Full Video, 2: Preview Frame): ").strip()
     is_preview = (render_mode == "2")
     if is_preview:
         num_vids = 1
@@ -154,7 +156,7 @@ def main():
                 v_i+1, topic_choice, sampled_df, bg_type, 
                 MUSIC_DIR, IMAGES_DIR, VIDEOS_DIR, FONTS_DIR, VOICEOVERS_DIR, OUTPUT_DIR, TTS_VOICE, 
                 is_preview=is_preview, template=template_name, thumbnail_path=thumb_path,
-                selected_char=selected_char
+                selected_char=selected_char, generate_script=generate_script
             )
             futures_to_indices[future] = sampled_indices
             topic_df = topic_df.drop(sampled_indices)
