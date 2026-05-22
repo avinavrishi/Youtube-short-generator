@@ -51,9 +51,9 @@ class BaseRenderer:
         ]
 
         self.high_ctr_titles = {
-            "american history": "Americans are Failing this 5th Grade History Test! 😱",
-            "us presidents": "Can You Name These US Presidents? 99% Fail! 🇺🇸",
-            "us states": "Only 1% of Americans Can Pass This States Quiz 😳",
+            "american history": "Americans History Test",
+            "us presidents": "Name These US Presidents",
+            "us states": "USA States Quiz For True American",
             "us capitals": "Is Your IQ High Enough For This US Capitals Test? 🧠",
             "usa mega": "This Impossible USA Mega Quiz Will Break Your Brain 🔥",
             "iq / brain": "Can You Pass This 140 IQ Brain Test? 🧠",
@@ -87,8 +87,8 @@ class BaseRenderer:
             "synonym and antonym": "Synonym or Antonym? Test Your Vocabulary!",
             "word meaning": "Do You Know The Real Meaning? Genius Level!",
             "one word": "One Word Substitution! Are You a Word Master?",
-            "bible": "Only 1% of True Believers can pass this Bible Quiz! ✝️",
-            "jesus": "How well do you REALLY know Jesus? Test your Faith! 🙏",
+            "bible": "Bible Quiz Only For True Believers",
+            "jesus": "Jesus Quiz? Test your Faith! 🙏",
         }
 
         self.outro_variations = [

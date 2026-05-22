@@ -852,7 +852,7 @@ class TextQuizRenderer(BaseRenderer):
                 bing_path = os.path.join(music_dir, reveal_sound_file)
                 if not os.path.exists(bing_path): bing_path = os.path.join(music_dir, "bing.mp3")
                 if os.path.exists(bing_path):
-                    audio_mixes.append(f"[{get_input_idx(bing_path)}:a]volume=0.3,adelay={a_at}|{a_at}[a_bing{idx}]")
+                    audio_mixes.append(f"[{get_input_idx(bing_path)}:a]volume=0.1,adelay={a_at}|{a_at}[a_bing{idx}]")
 
                 # Question Text
                 if template == "chat":
