@@ -15,9 +15,6 @@ class BaseRenderer:
         self.questions = questions
         self.assets_dir = assets_dir
         self.v_idx = 1
-        self.custom_heading = None
-        self.skip_intro = False
-        self.custom_heading = None
         self.filter_graph = []
         self.input_cmds = []
         self.input_paths = []
@@ -105,8 +102,6 @@ class BaseRenderer:
         self.channel_cta = "Subscribe to Quiz Raptor for more fun and tricky quizzes!"
 
     def get_viral_title(self, topic, qty):
-        if self.custom_heading:
-            return self.custom_heading
         topic_clean = topic.strip().lower()
         for key, title in self.high_ctr_titles.items():
             if key in topic_clean:
@@ -158,27 +153,23 @@ class BaseRenderer:
             self.input_cmds.extend(["-loop", "1", "-i", path.replace('\\', '/')])
             indices[asset.split('.')[0]] = audio_offset + i
         
-        # Intro Animation (Character)
-        if not self.skip_intro and 'intro_char' in indices:
-            char_h = VIDEO_HEIGHT - header_h
-            self.filter_graph.append(f"[{indices['intro_char']}:v]scale={VIDEO_WIDTH}:{char_h}:force_original_aspect_ratio=increase,crop={VIDEO_WIDTH}:{char_h}[vchar{video_id}];")
-            self.filter_graph.append(f"{last_node}[vchar{video_id}]overlay=enable=between(t\\,0\\,{intro_dur:.2f}):x=0:y={header_h}[vci{video_id}];")
-            last_node = f"[vci{video_id}]"
+        # New: Intro Animations
+        curr_idx = audio_offset + len(assets)
         
-        # Option Box Gen
-        opt_box_w = opt_w
-        opt_box_h = opt_h
-        opt_box_path = os.path.join(self.assets_dir, f"opt_box_{opt_box_w}_{opt_box_h}_{template}.png")
-        hl_box_path = os.path.join(self.assets_dir, f"hl_box_{opt_box_w}_{opt_box_h}_{template}.png")
-        
-        if not os.path.exists(opt_box_path) or not os.path.exists(hl_box_path):
-            from PIL import Image, ImageDraw, ImageFilter
-            radius = 60 if template in ["grid", "millionaire"] else 40
+        # 1. Intro Character
+        char_path = None
+        if selected_char == "NONE":
+            pass # Skip
+        elif selected_char:
+            char_path = os.path.join(self.assets_dir, selected_char)
+        else:
+            char_files = glob.glob(os.path.join(self.assets_dir, "intro_char*.*"))
+            char_path = random.choice(char_files) if char_files else None
             
-            # Normal box
-            b_img = Image.new('RGBA', (opt_box_w + 100, opt_box_h + 100), (0,0,0,0))
-            if template not in ["chalkboard", "hacker", "gameboy"]:
-                s_draw = ImageDraw.Draw(b_img)
+        if char_path and os.path.exists(char_path):
+            self.input_cmds.extend(["-stream_loop", "-1", "-i", char_path.replace('\\', '/')])
+            indices['intro_char'] = curr_idx
+            curr_idx += 1
             
         return indices
 

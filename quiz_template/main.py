@@ -52,15 +52,6 @@ def main():
     else:
         print("Invalid choice.")
         return
-    # Prompt for custom heading (optional)
-    heading_choice = input("\nDo you want to provide a custom heading for the video? (y/N): ").strip().lower()
-    if heading_choice == 'y':
-        custom_heading = input("Enter custom heading: ").strip()
-    else:
-        custom_heading = None
-
-    # Skip intro title to start directly with questions
-    skip_intro = True
 
     df = pd.read_excel(excel_path)
     df.dropna(subset=['Topic', 'Question', 'Answer'], inplace=True)
@@ -160,8 +151,6 @@ def main():
             sampled_df = df.loc[sampled_indices].to_dict('records')
             
             renderer = renderer_class(topic_choice, sampled_df, ASSETS_DIR)
-            renderer.custom_heading = custom_heading
-            renderer.skip_intro = skip_intro
             future = executor.submit(
                 renderer.build_video, 
                 v_i+1, topic_choice, sampled_df, bg_type, 
