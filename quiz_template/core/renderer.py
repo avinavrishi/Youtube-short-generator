@@ -51,7 +51,7 @@ class BaseRenderer:
         ]
 
         self.high_ctr_titles = {
-            "american history": "Americans History Test",
+            "american history": "Can You Pass This Americans History Quiz",
             "us presidents": "Name These US Presidents",
             "us states": "USA States Quiz For True American",
             "us capitals": "Is Your IQ High Enough For This US Capitals Test? 🧠",
