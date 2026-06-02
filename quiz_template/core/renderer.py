@@ -51,7 +51,9 @@ class BaseRenderer:
         ]
 
         self.high_ctr_titles = {
-            "classic tv shows": "Only True Fans Will Pass This Classic TV Shows Quiz",
+            "Golden Oldies Music": "Can You Name These Golden Oldies Hits",
+            "Route 66 Memories": "Route 66 Memories Quiz",
+            "classic tv shows": "Classic TV Shows Quiz",
             "american history": "Can You Pass This Americans History Quiz",
             "us presidents": "Name These US Presidents",
             "us states": "USA States Quiz For True American",
